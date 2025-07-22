@@ -1,0 +1,35 @@
+{
+    "description": "Query elevation data for multiple coordinate pairs (up to 100 coordinates)",
+    "type": "plan",
+    "version": "v0.0.1",
+    "serial": [
+        {
+            "description": "Get elevation data for multiple coordinates",
+            "type": "restful",
+            "method": "GET",
+            "url": "https://api.open-meteo.com/v1/elevation",
+            "params": {
+                "latitude": "39.7392,40.7128,34.0522",
+                "longitude": "-104.9903,-74.0060,-118.2437"
+            },
+            "stream": true,
+            "name": "elevationData"
+        },
+        {
+            "description": "Display bulk elevation data in table format",
+            "type": "table",
+            "title": "Bulk Elevation Data",
+            "stream": false,
+            "name": "elevationTable",
+            "input": "${$zip($elevationData.latitude, $elevationData.longitude, $elevationData.elevation) ~> $map(function($row) { {\"latitude\": $row[0], \"longitude\": $row[1], \"elevation\": $row[2]} })}"
+        },
+        {
+            "description": "Analyze bulk elevation data and provide insights",
+            "model": "gpt-4",
+            "type": "llm",
+            "stream": true,
+            "input": "${$elevationTable}",
+            "query": "Based on the elevation data provided for multiple locations (Denver: 39.7392,-104.9903, New York: 40.7128,-74.0060, Los Angeles: 34.0522,-118.2437), give me a comprehensive analysis. Include: 1) Elevation comparisons between the locations, 2) Geographic significance of the elevation differences, 3) How elevation might impact climate, weather, or living conditions in each area, 4) Any notable patterns or insights from the data."
+        }
+    ]
+}

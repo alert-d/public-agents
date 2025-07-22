@@ -1,0 +1,35 @@
+{
+    "description": "Query elevation data for a single coordinate pair",
+    "type": "plan",
+    "version": "v0.0.1",
+    "serial": [
+        {
+            "description": "Get elevation data for the specified coordinates",
+            "type": "restful",
+            "method": "GET",
+            "url": "https://api.open-meteo.com/v1/elevation",
+            "params": {
+                "latitude": "39.7392",
+                "longitude": "-104.9903"
+            },
+            "stream": true,
+            "name": "elevationData"
+        },
+        {
+            "description": "Display elevation data in table format",
+            "type": "table",
+            "title": "Elevation Data",
+            "stream": false,
+            "name": "elevationTable",
+            "input": "${[{\"latitude\": $elevationData.latitude[0], \"longitude\": $elevationData.longitude[0], \"elevation\": $elevationData.elevation[0]}]}"
+        },
+        {
+            "description": "Analyze elevation data and provide insights",
+            "model": "gpt-4",
+            "type": "llm",
+            "stream": true,
+            "input": "${$elevationTable}",
+            "query": "Based on the elevation data provided for coordinates 39.7392, -104.9903 (Denver, Colorado), give me a detailed analysis. Include: 1) The exact elevation in meters, 2) The significance of this elevation, 3) How this elevation might impact the local environment or climate."
+        }
+    ]
+}
