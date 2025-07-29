@@ -48,9 +48,3 @@ The OpenMeteo Agent is your all-in-one assistant for weather, climate, air quali
 - "Coordinates for Tokyo"
 
 ---
-
-<div align="center">
-
-_Powered by Open-Meteo's free and open weather data APIs_
-
-</div>
