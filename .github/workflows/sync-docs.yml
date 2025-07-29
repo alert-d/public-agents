@@ -17,7 +17,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/alert-d/gitbooks/dispatches \
-            -d '{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:alert-d/core-agents.git"}}')
+            -d '{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:alert-d/public-agents.git"}}')
 
           http_code=$(echo "$response" | tail -n1)
           response_body=$(echo "$response" | head -n -1)
