@@ -1,98 +1,56 @@
-# Open-Meteo Agent Documentation
+# OpenMeteo Agent
 
-## What is the @/openmeteo Agent?
+<div align="center">
 
-The `@/openmeteo` agent is your all-in-one assistant for weather, climate, air quality, marine, satellite radiation, elevation, and geocoding data—powered by the Open-Meteo platform. It answers natural language questions by automatically selecting the right data source and returning clear, actionable results for any location worldwide.
+_Weather, climate, air quality, marine, satellite radiation, elevation, and geocoding data powered by Open-Meteo_
 
----
-
-## What Can You Ask?
-
-You can ask about:
-
-- **Weather forecasts** (e.g., "7-day forecast for Paris")
-- **Historical weather** (e.g., "What was the weather in New York in July 2020?")
-- **Marine conditions** (e.g., "Wave height forecast for Miami")
-- **Air quality** (e.g., "Current air quality in Berlin")
-- **Solar radiation** (e.g., "Solar radiation in Madrid last week")
-- **Elevation** (e.g., "Elevation of Mount Everest")
-- **Geocoding** (e.g., "Coordinates for Tokyo")
-
-The agent will interpret your question, fetch the relevant data, and present it in a user-friendly format, often with tables and a summary.
+</div>
 
 ---
 
-## What to Expect in Responses
+## Overview
 
-- **Tables** of relevant data (e.g., daily temperatures, air quality indices)
-- **Summaries** and insights (e.g., trends, recommendations)
-- **Location details** (e.g., coordinates, timezone)
-- **No API key required**—all data is free and open
+The OpenMeteo Agent is your all-in-one assistant for weather, climate, air quality, marine, satellite radiation, elevation, and geocoding data—powered by the Open-Meteo platform. It answers natural language questions by automatically selecting the right data source and returning clear, actionable results for any location worldwide.
 
 ---
 
-## Service Highlights
+## What It Does
 
-### Weather Forecast
-
-- Up to 16 days ahead, hourly or daily
-- Global, high-resolution, multi-model
-- Variables: temperature, precipitation, wind, humidity, UV, etc.
-
-### Historical Weather
-
-- Data from 1940 to present
-- 35+ variables, hourly/daily
-- Useful for research, insurance, agriculture, and more
-
-### Marine Weather
-
-- Ocean/coastal forecasts: waves, sea surface temperature, currents
-- Up to 16 days, 5 km resolution
-
-### Air Quality
-
-- Forecasts for PM10, PM2.5, gases, AQI, pollen (Europe)
-- Up to 7 days, 11 km resolution
-
-### Satellite Radiation
-
-- Real-time and historical solar irradiance
-- Direct, diffuse, global, and tilted values
-
-### Elevation
-
-- Terrain elevation from Copernicus DEM (90m)
-
-### Geocoding
-
-- Convert place names to coordinates and vice versa
+| Capability              | Description                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Weather Forecast**    | Up to 16 days ahead, hourly or daily forecasts with temperature, precipitation, wind, humidity, UV, and more |
+| **Historical Weather**  | Data from 1940 to present with 35+ variables for research, insurance, agriculture, and analysis              |
+| **Marine Weather**      | Ocean/coastal forecasts including waves, sea surface temperature, and currents up to 16 days ahead           |
+| **Air Quality**         | Forecasts for PM10, PM2.5, gases, AQI, and pollen (Europe) up to 7 days ahead                                |
+| **Satellite Radiation** | Real-time and historical solar irradiance including direct, diffuse, global, and tilted values               |
+| **Elevation**           | Terrain elevation data from Copernicus DEM (90m resolution)                                                  |
+| **Geocoding**           | Convert place names to coordinates and vice versa for global locations                                       |
 
 ---
 
-## Tips for Best Results
+## How It Works
 
-- **Be specific**: Include city names, dates, or variables of interest
-- **Use plain language**: The agent understands natural questions
-- **For locations**: City names, coordinates, or even postal codes work
-- **For time ranges**: Specify exact dates if you want historical data
-- **For air quality or marine data**: Mention the type of data you need (e.g., "PM2.5", "wave height")
-
----
-
-## API Endpoints Reference
-
-- **Weather Forecast:** `https://api.open-meteo.com/v1/forecast`
-- **Historical Weather:** `https://archive-api.open-meteo.com/v1/archive`
-- **Marine Weather:** `https://marine-api.open-meteo.com/v1/marine`
-- **Air Quality:** `https://air-quality-api.open-meteo.com/v1/air-quality`
-- **Satellite Radiation:** `https://satellite-api.open-meteo.com/v1/archive`
-- **Elevation:** `https://api.open-meteo.com/v1/elevation`
-- **Geocoding:** `https://geocoding-api.open-meteo.com/v1/search` (forward), `/v1/reverse` (reverse)
+1. **Query Input**: You ask natural language questions about weather, air quality, marine conditions, or geographic data
+2. **Data Collection**: The agent automatically selects the appropriate Open-Meteo API endpoint based on your query
+3. **Analysis**: Data is processed and formatted into user-friendly tables and summaries
+4. **Results**: Clear, actionable results are presented with location details, trends, and insights
 
 ---
 
-## Learn More
+## Example Queries
 
-- For technical details and advanced integration, see the [Open-Meteo API documentation](https://open-meteo.com/en/docs)
-- For variable lists and service specifics, see the individual service folders in this repo
+- "7-day forecast for Paris"
+- "What was the weather in New York in July 2020?"
+- "Current air quality in Berlin"
+- "Wave height forecast for Miami"
+- "Solar radiation in Madrid last week"
+- "Elevation of Mount Everest"
+- "Coordinates for Tokyo"
+
+---
+
+<div align="center">
+
+_Powered by Open-Meteo's free and open weather data APIs_
+
+</div>
