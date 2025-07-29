@@ -64,5 +64,3 @@ This document is used to test:
 - Will be removed after testing
 
 ---
-
-_Last updated: 2024-01-01_

@@ -1,4 +1,4 @@
-name: Dispatch Docs Sync to GitBooks from Core-Agents
+name: Dispatch Docs Sync to GitBooks from Public-Agents
 
 on:
   push:
