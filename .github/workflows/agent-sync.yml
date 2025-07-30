@@ -18,6 +18,11 @@ jobs:
       pull-requests: write
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     steps:
+      - name: Parse repo config
+        run: |
+          echo "TARGET_REPO=$(echo '${{ secrets.REPO_CONFIG }}' | jq -r '.target_repo')" >> $GITHUB_ENV
+          echo "SOURCE_REPO_URL=$(echo '${{ secrets.REPO_CONFIG }}' | jq -r '.source_repo_url')" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -56,15 +61,36 @@ jobs:
               exit 1
             fi
             
+            # Additional sanitization - prevent path traversal
+            if [[ "$agent_type" =~ \.\. ]] || [[ "$agent_type" =~ ^/ ]] || [[ "$agent_type" =~ /$ ]]; then
+              echo "Error: Invalid agent_type '$agent_type'. Cannot contain path traversal characters."
+              exit 1
+            fi
+            
+            # Limit agent_type length to prevent abuse
+            if [ ${#agent_type} -gt 50 ]; then
+              echo "Error: Agent type too long (${#agent_type} chars). Maximum allowed: 50 characters."
+              exit 1
+            fi
+            
+            # Validate repo URL format and allowed domains
+            allowed_domains="github.com,gitlab.com,bitbucket.org"
+            repo_domain=$(echo "$repo_url" | sed -E 's|^https?://([^/]+)/.*|\1|' | sed -E 's|^git@([^:]+):.*|\1|')
+            
+            if [[ ! "$allowed_domains" =~ "$repo_domain" ]]; then
+              echo "Error: Repository domain '$repo_domain' not in allowed list: $allowed_domains"
+              exit 1
+            fi
+            
             # Validate repo URL format
-            if [[ ! "$repo_url" =~ ^(https://github\.com/|git@github\.com:)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
+            if [[ ! "$repo_url" =~ ^(https://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
               echo "Error: Invalid repo URL format: $repo_url"
               exit 1
             fi
             
             # Convert SSH URLs to HTTPS for better compatibility
-            if [[ "$repo_url" == git@github.com:* ]]; then
-              repo_url=$(echo "$repo_url" | sed 's|git@github.com:|https://github.com/|')
+            if [[ "$repo_url" == git@* ]]; then
+              repo_url=$(echo "$repo_url" | sed 's|git@|https://|' | sed 's|:|/|')
               echo "Converted SSH URL to HTTPS: $repo_url"
             fi
             
@@ -76,7 +102,7 @@ jobs:
             
             # Clone the remote repo with timeout and error handling
             echo "Cloning remote repo..."
-            if timeout 300 git clone "$repo_url" "$temp_dir"; then
+            if timeout 300 git clone --depth 1 --single-branch "$repo_url" "$temp_dir"; then
               echo "Successfully cloned repo"
             else
               echo "Error: Failed to clone repo or timeout exceeded"
@@ -86,8 +112,9 @@ jobs:
             
             # Verify the cloned repo is not too large (prevent abuse)
             repo_size=$(du -sm "$temp_dir" | cut -f1)
-            if [ "$repo_size" -gt 100 ]; then
-              echo "Error: Repository too large ($repo_size MB). Maximum allowed: 100MB"
+            max_size=${MAX_REPO_SIZE_MB:-100}
+            if [ "$repo_size" -gt "$max_size" ]; then
+              echo "Error: Repository too large ($repo_size MB). Maximum allowed: ${max_size}MB"
               rm -rf "$temp_dir"
               exit 1
             fi
@@ -102,8 +129,9 @@ jobs:
                 echo "Successfully copied agent files"
                 
                 # Verify no sensitive files were copied
-                if find "markdown/$agent_type" -name "*.key" -o -name "*.pem" -o -name ".env*" -o -name "secrets.*" | grep -q .; then
-                  echo "Warning: Potential sensitive files detected in copied agent"
+                sensitive_files=$(find "markdown/$agent_type" -name "*.key" -o -name "*.pem" -o -name ".env*" -o -name "secrets.*" -o -name "*.token" -o -name "*.secret" 2>/dev/null | wc -l)
+                if [ "$sensitive_files" -gt 0 ]; then
+                  echo "Warning: Found $sensitive_files potential sensitive files in copied agent"
                   # Don't fail, but log the warning
                 fi
               else
@@ -129,6 +157,7 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.DOC_SYNC }}
+          MAX_REPO_SIZE_MB: ${{ secrets.MAX_REPO_SIZE_MB || '100' }}
 
       - name: Commit and push changes
         run: |
@@ -148,7 +177,7 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               https://api.github.com/repos/${{ github.repository }}/dispatches \
-              -d '{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:${{ github.repository }}.git"}}')
+              -d '{"event_type":"sync-docs","client_payload":{"repo_url":"$SOURCE_REPO_URL"}}')
 
             http_code=$(echo "$response" | tail -n1)
             response_body=$(echo "$response" | head -n -1)

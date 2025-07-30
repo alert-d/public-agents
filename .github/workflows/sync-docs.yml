@@ -12,13 +12,30 @@ jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
+      - name: Parse repo config
+        run: |
+          echo "TARGET_REPO=$(echo '${{ secrets.REPO_CONFIG }}' | jq -r '.target_repo')" >> $GITHUB_ENV
+          echo "SOURCE_REPO_URL=$(echo '${{ secrets.REPO_CONFIG }}' | jq -r '.source_repo_url')" >> $GITHUB_ENV
+
+      - name: Validate parsed config
+        run: |
+          if [ -z "$TARGET_REPO" ] || [ "$TARGET_REPO" = "null" ]; then
+            echo "Error: Invalid TARGET_REPO in REPO_CONFIG"
+            exit 1
+          fi
+          if [ -z "$SOURCE_REPO_URL" ] || [ "$SOURCE_REPO_URL" = "null" ]; then
+            echo "Error: Invalid SOURCE_REPO_URL in REPO_CONFIG"
+            exit 1
+          fi
+          echo "Config validation passed"
+
       - name: Validate repository_dispatch payload
         if: github.event_name == 'repository_dispatch'
         run: |
           # Validate that we received the expected payload
-          if [ "${{ github.event.client_payload.repo_url }}" != "git@github.com:${{ github.repository }}.git" ]; then
+          if [ "${{ github.event.client_payload.repo_url }}" != "$SOURCE_REPO_URL" ]; then
             echo "Error: Invalid repo_url in dispatch payload"
-            echo "Expected: git@github.com:${{ github.repository }}.git"
+            echo "Expected: $SOURCE_REPO_URL"
             echo "Received: ${{ github.event.client_payload.repo_url }}"
             exit 1
           fi
@@ -32,8 +49,8 @@ jobs:
               -H "Authorization: Bearer ${{ secrets.DOC_SYNC }}" \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              https://api.github.com/repos/alert-d/gitbooks/dispatches \
-              -d '"'"'{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:alert-d/public-agents.git"}}'"'"')
+              https://api.github.com/repos/$TARGET_REPO/dispatches \
+              -d '"'"'{"event_type":"sync-docs","client_payload":{"repo_url":"$SOURCE_REPO_URL"}}'"'"')
 
             http_code=$(echo "$response" | tail -n1)
             response_body=$(echo "$response" | head -n -1)
