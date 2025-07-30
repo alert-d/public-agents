@@ -2,4 +2,4 @@ type: test
 extends: test/default
 examples: plans
 getExampleContent: ${function($example){$example}}
-repo: git@github.com:utullyca/Agents.git
+repo: https://github.com/utullyca/Agents.git

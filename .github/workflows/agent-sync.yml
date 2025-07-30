@@ -31,6 +31,12 @@ jobs:
             # Extract agent type and repo URL from meta.yaml
             agent_type=$(grep "^type:" "meta.yaml" | cut -d' ' -f2)
             repo_url=$(grep "^repo:" "meta.yaml" | cut -d' ' -f2)
+
+            # Convert SSH URLs to HTTPS for better compatibility
+            if [[ "$repo_url" == git@github.com:* ]]; then
+              repo_url=$(echo "$repo_url" | sed 's|git@github.com:|https://github.com/|')
+              echo "Converted SSH URL to HTTPS: $repo_url"
+            fi
             
             if [ -n "$repo_url" ] && [ -n "$agent_type" ]; then
               echo "Found agent type: $agent_type"
