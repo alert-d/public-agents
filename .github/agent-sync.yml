@@ -1,0 +1,94 @@
+name: Agent Sync Workflow
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "meta.yaml"
+      - ".github/workflows/agent-sync.yml"
+
+jobs:
+  sync-agents:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Process meta.yaml if present
+        run: |
+          if [ -f "meta.yaml" ]; then
+            echo "Found meta.yaml in root, processing..."
+            
+            # Extract agent type and repo URL from meta.yaml
+            agent_type=$(grep "^type:" "meta.yaml" | cut -d' ' -f2)
+            repo_url=$(grep "^repo:" "meta.yaml" | cut -d' ' -f2)
+            
+            if [ -n "$repo_url" ] && [ -n "$agent_type" ]; then
+              echo "Found agent type: $agent_type"
+              echo "Found repo URL: $repo_url"
+              
+              # Create temp directory
+              temp_dir=".temp-repo-$(date +%s)"
+              
+              # Clone the remote repo
+              echo "Cloning remote repo..."
+              git clone "$repo_url" "$temp_dir"
+              
+              # Copy the agent folder from remote to local markdown
+              if [ -d "$temp_dir/$agent_type" ]; then
+                echo "Copying $agent_type/* to markdown/$agent_type/"
+                mkdir -p "markdown/$agent_type"
+                cp -r "$temp_dir/$agent_type"/* "markdown/$agent_type/"
+                echo "Successfully copied agent files"
+              else
+                echo "Warning: $agent_type directory not found in remote repo"
+              fi
+              
+              # Clean up temp repo
+              rm -rf "$temp_dir"
+              echo "Cleaned up temp repo"
+              
+              # Remove meta.yaml from root (cleanup)
+              rm "meta.yaml"
+              echo "Removed meta.yaml from root"
+            else
+              echo "No repo URL or agent type found in meta.yaml"
+            fi
+          else
+            echo "No meta.yaml found in root, skipping agent sync"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-sync agents from source repos"
+          git push
+
+      - name: Trigger sync-docs workflow
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d '{"event_type":"sync-docs","client_payload":{"repo_url":"${{ github.repositoryUrl }}"}}')
+
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+
+          if [ "$http_code" = "204" ]; then
+            echo "Dispatch event sent successfully to sync-docs"
+          else
+            echo "Failed to send dispatch event. Status: $http_code"
+            echo "Response: $response_body"
+            exit 1
+          fi
