@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "markdown/**"
+  repository_dispatch:
+    types: [sync-docs]
 
 jobs:
   dispatch:
