@@ -74,8 +74,14 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-sync agents from source repos"
-          git push
+
+          # Only commit and push if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-sync agents from source repos"
+            git push
+          else
+            echo "No changes to commit"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.DOC_SYNC }}
 
