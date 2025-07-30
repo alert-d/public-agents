@@ -1,4 +1,0 @@
-type: test
-extends: test/default
-examples: plans
-getExampleContent: ${function($example){$example}}

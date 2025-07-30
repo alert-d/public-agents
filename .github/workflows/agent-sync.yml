@@ -33,47 +33,97 @@ jobs:
           if [ -f "meta.yaml" ]; then
             echo "Found meta.yaml in root, processing..."
             
-            # Extract agent type and repo URL from meta.yaml
-            agent_type=$(grep "^type:" "meta.yaml" | cut -d' ' -f2)
-            repo_url=$(grep "^repo:" "meta.yaml" | cut -d' ' -f2)
-
+            # Validate meta.yaml format and extract fields safely
+            if ! command -v yq &> /dev/null; then
+              echo "Installing yq for YAML parsing..."
+              wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+              chmod +x /usr/local/bin/yq
+            fi
+            
+            # Extract agent type and repo URL using yq for safer parsing
+            agent_type=$(yq eval '.type' "meta.yaml" 2>/dev/null | tr -d '"')
+            repo_url=$(yq eval '.repo' "meta.yaml" 2>/dev/null | tr -d '"')
+            
+            # Validate inputs
+            if [ -z "$agent_type" ] || [ -z "$repo_url" ]; then
+              echo "Error: Missing required fields 'type' or 'repo' in meta.yaml"
+              exit 1
+            fi
+            
+            # Sanitize agent_type (only allow alphanumeric, hyphens, underscores)
+            if [[ ! "$agent_type" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+              echo "Error: Invalid agent_type '$agent_type'. Only alphanumeric, hyphens, and underscores allowed."
+              exit 1
+            fi
+            
+            # Validate repo URL format
+            if [[ ! "$repo_url" =~ ^(https://github\.com/|git@github\.com:)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
+              echo "Error: Invalid repo URL format: $repo_url"
+              exit 1
+            fi
+            
             # Convert SSH URLs to HTTPS for better compatibility
             if [[ "$repo_url" == git@github.com:* ]]; then
               repo_url=$(echo "$repo_url" | sed 's|git@github.com:|https://github.com/|')
               echo "Converted SSH URL to HTTPS: $repo_url"
             fi
             
-            if [ -n "$repo_url" ] && [ -n "$agent_type" ]; then
-              echo "Found agent type: $agent_type"
-              echo "Found repo URL: $repo_url"
-              
-              # Create temp directory
-              temp_dir=".temp-repo-$(date +%s)"
-              
-              # Clone the remote repo
-              echo "Cloning remote repo..."
-              git clone "$repo_url" "$temp_dir"
-              
-              # Copy the agent folder from remote to local markdown
-              if [ -d "$temp_dir/$agent_type" ]; then
-                echo "Copying $agent_type/* to markdown/$agent_type/"
-                mkdir -p "markdown/$agent_type"
-                cp -r "$temp_dir/$agent_type"/* "markdown/$agent_type/"
-                echo "Successfully copied agent files"
-              else
-                echo "Warning: $agent_type directory not found in remote repo"
-              fi
-              
-              # Clean up temp repo
-              rm -rf "$temp_dir"
-              echo "Cleaned up temp repo"
-              
-              # Remove meta.yaml from root (cleanup)
-              rm "meta.yaml"
-              echo "Removed meta.yaml from root"
+            echo "Found agent type: $agent_type"
+            echo "Found repo URL: $repo_url"
+            
+            # Create temp directory with timestamp to avoid conflicts
+            temp_dir=".temp-repo-$(date +%s)-$$"
+            
+            # Clone the remote repo with timeout and error handling
+            echo "Cloning remote repo..."
+            if timeout 300 git clone "$repo_url" "$temp_dir"; then
+              echo "Successfully cloned repo"
             else
-              echo "No repo URL or agent type found in meta.yaml"
+              echo "Error: Failed to clone repo or timeout exceeded"
+              rm -rf "$temp_dir" 2>/dev/null || true
+              exit 1
             fi
+            
+            # Verify the cloned repo is not too large (prevent abuse)
+            repo_size=$(du -sm "$temp_dir" | cut -f1)
+            if [ "$repo_size" -gt 100 ]; then
+              echo "Error: Repository too large ($repo_size MB). Maximum allowed: 100MB"
+              rm -rf "$temp_dir"
+              exit 1
+            fi
+            
+            # Copy the agent folder from remote to local markdown
+            if [ -d "$temp_dir/$agent_type" ]; then
+              echo "Copying $agent_type/* to markdown/$agent_type/"
+              mkdir -p "markdown/$agent_type"
+              
+              # Copy files with error handling
+              if cp -r "$temp_dir/$agent_type"/* "markdown/$agent_type/"; then
+                echo "Successfully copied agent files"
+                
+                # Verify no sensitive files were copied
+                if find "markdown/$agent_type" -name "*.key" -o -name "*.pem" -o -name ".env*" -o -name "secrets.*" | grep -q .; then
+                  echo "Warning: Potential sensitive files detected in copied agent"
+                  # Don't fail, but log the warning
+                fi
+              else
+                echo "Error: Failed to copy agent files"
+                rm -rf "$temp_dir"
+                exit 1
+              fi
+            else
+              echo "Error: $agent_type directory not found in remote repo"
+              rm -rf "$temp_dir"
+              exit 1
+            fi
+            
+            # Clean up temp repo
+            rm -rf "$temp_dir"
+            echo "Cleaned up temp repo"
+            
+            # Remove meta.yaml from root (cleanup)
+            rm "meta.yaml"
+            echo "Removed meta.yaml from root"
           else
             echo "No meta.yaml found in root, skipping agent sync"
           fi

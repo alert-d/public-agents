@@ -5,27 +5,47 @@ on:
     branches: [main]
     paths:
       - "markdown/**"
+  repository_dispatch:
+    types: [sync-docs]
 
 jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger sync-docs in gitbooks-repo
+      - name: Validate repository_dispatch payload
+        if: github.event_name == 'repository_dispatch'
         run: |
-          response=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer ${{ secrets.DOC_SYNC }}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/alert-d/gitbooks/dispatches \
-            -d '{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:alert-d/public-agents.git"}}')
-
-          http_code=$(echo "$response" | tail -n1)
-          response_body=$(echo "$response" | head -n -1)
-
-          if [ "$http_code" = "204" ]; then
-            echo "Dispatch event sent successfully"
-          else
-            echo "Failed to send dispatch event. Status: $http_code"
-            echo "Response: $response_body"
+          # Validate that we received the expected payload
+          if [ "${{ github.event.client_payload.repo_url }}" != "git@github.com:${{ github.repository }}.git" ]; then
+            echo "Error: Invalid repo_url in dispatch payload"
+            echo "Expected: git@github.com:${{ github.repository }}.git"
+            echo "Received: ${{ github.event.client_payload.repo_url }}"
             exit 1
           fi
+          echo "Repository dispatch payload validated successfully"
+
+      - name: Trigger sync-docs in gitbooks-repo
+        run: |
+          # Set timeout for the API call
+          timeout 60 bash -c '
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              -H "Authorization: Bearer ${{ secrets.DOC_SYNC }}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              https://api.github.com/repos/alert-d/gitbooks/dispatches \
+              -d '"'"'{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:alert-d/public-agents.git"}}'"'"')
+
+            http_code=$(echo "$response" | tail -n1)
+            response_body=$(echo "$response" | head -n -1)
+
+            if [ "$http_code" = "204" ]; then
+              echo "Dispatch event sent successfully"
+            else
+              echo "Failed to send dispatch event. Status: $http_code"
+              echo "Response: $response_body"
+              exit 1
+            fi
+          ' || {
+            echo "Error: API call timed out or failed"
+            exit 1
+          }
