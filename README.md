@@ -1,14 +1,5 @@
 # Public Agents
 
-<div align="center">
-
-![Public Agents](https://img.shields.io/badge/Public-Agents-blue?style=for-the-badge&logo=robot)
-![Status](https://img.shields.io/badge/Status-Active-green?style=for-the-badge)
-
-_3rd party AlertD agents for the exchange_
-
-</div>
-
 ---
 
 ## Overview
