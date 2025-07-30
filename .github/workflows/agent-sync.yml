@@ -84,10 +84,7 @@ jobs:
           # Only commit and push if there are changes
           if ! git diff --staged --quiet; then
             git commit -m "Auto-sync agents from source repos"
-            
-            # Configure HTTPS push with GITHUB_TOKEN
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            git push origin main
+            git push
             
             # Only trigger sync-docs if we actually committed changes
             echo "Triggering sync-docs workflow..."
