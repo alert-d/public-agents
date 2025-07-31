@@ -20,7 +20,15 @@ Plans always use an LLM as their final step for analyzing results. This can be u
 
 **TODAY DATE IS {{CURRENT_DATE}}**
 
-**MANDATORY**: For ANY date range, you MUST hardcode dates using the exact format:
+**MANDATORY**: For date parameters, use the appropriate format based on the API:
+
+**For Forecast API** (future weather):
+
+```json
+"forecast_days": "7"
+```
+
+**For Historical APIs** (past data):
 
 ```json
 "start_date": "2025-06-01",
@@ -33,7 +41,7 @@ Plans always use an LLM as their final step for analyzing results. This can be u
 - utility date functions
 - offsets like `P1M` or `.startOfMonth()`
 
-Always write static date strings in `YYYY-MM-DD` format, even if the user asks about "last month".
+Always write static values, even if the user asks about "last month".
 
 ---
 
@@ -266,11 +274,11 @@ All plans must include a `transform` step to extract and format data from the AP
 
 ```json
 {
-    "name": "transform",
-    "type": "transform",
-    "description": "Extract and format data for analysis",
-    "output": "JSONata expression to extract relevant fields",
-    "stream": true
+  "name": "transform",
+  "type": "transform",
+  "description": "Extract and format data for analysis",
+  "output": "JSONata expression to extract relevant fields",
+  "stream": true
 }
 ```
 
@@ -280,10 +288,10 @@ All plans must include a `table` step to structure the transformed data:
 
 ```json
 {
-    "name": "table",
-    "type": "table",
-    "description": "Tabulate transformed data for analysis",
-    "stream": false
+  "name": "table",
+  "type": "table",
+  "description": "Tabulate transformed data for analysis",
+  "stream": false
 }
 ```
 
@@ -293,13 +301,13 @@ All plans must end with an `llm` step that analyzes the table data. Never feed a
 
 ```json
 {
-    "name": "analysis",
-    "type": "llm",
-    "description": "Analyze the table data and provide insights",
-    "model": "gpt-4",
-    "stream": true,
-    "input": "${$tableName}",
-    "query": "Analyze the data and provide insights about patterns, trends, or notable conditions."
+  "name": "analysis",
+  "type": "llm",
+  "description": "Analyze the table data and provide insights",
+  "model": "gpt-4",
+  "stream": true,
+  "input": "${$tableName}",
+  "query": "Analyze the data and provide insights about patterns, trends, or notable conditions."
 }
 ```
 
@@ -311,41 +319,41 @@ Here's an example plan that converts a city name to coordinates:
 
 ```json
 {
-    "description": "Convert a city name to geographic coordinates using Open-Meteo geocoding API with selective data extraction",
-    "type": "plan",
-    "version": "v0.0.2",
-    "serial": [
-        {
-            "name": "geocode",
-            "type": "restful",
-            "description": "Convert city name to coordinates using forward geocoding with selective extraction",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Monaco",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": false
-        },
-        {
-            "name": "geocodeTable",
-            "type": "table",
-            "description": "Display geocoding results in table format",
-            "title": "Geocoding Results",
-            "stream": false,
-            "input": "${[{\"place_name\": $geocode.results[0].name, \"latitude\": $geocode.results[0].latitude, \"longitude\": $geocode.results[0].longitude, \"country_code\": $geocode.results[0].country_code, \"timezone\": $geocode.results[0].timezone}]}"
-        },
-        {
-            "name": "geocodeAnalysis",
-            "type": "llm",
-            "description": "Analyze and present geocoding results",
-            "model": "gpt-4",
-            "input": "${$geocodeTable}",
-            "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location.",
-            "stream": true
-        }
-    ]
+  "description": "Convert a city name to geographic coordinates using Open-Meteo geocoding API with selective data extraction",
+  "type": "plan",
+  "version": "v0.0.2",
+  "serial": [
+    {
+      "name": "geocode",
+      "type": "restful",
+      "description": "Convert city name to coordinates using forward geocoding with selective extraction",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Monaco",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": false
+    },
+    {
+      "name": "geocodeTable",
+      "type": "table",
+      "description": "Display geocoding results in table format",
+      "title": "Geocoding Results",
+      "stream": false,
+      "input": "${[{\"place_name\": $geocode.results[0].name, \"latitude\": $geocode.results[0].latitude, \"longitude\": $geocode.results[0].longitude, \"country_code\": $geocode.results[0].country_code, \"timezone\": $geocode.results[0].timezone}]}"
+    },
+    {
+      "name": "geocodeAnalysis",
+      "type": "llm",
+      "description": "Analyze and present geocoding results",
+      "model": "gpt-4",
+      "input": "${$geocodeTable}",
+      "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location.",
+      "stream": true
+    }
+  ]
 }
 ```
 
@@ -355,57 +363,57 @@ Here's an example plan that gets weather forecast for a city:
 
 ```json
 {
-    "description": "Convert a city name to coordinates and get a 7-day weather forecast with table display and LLM analysis.",
-    "type": "plan",
-    "version": "v0.0.5",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Paris",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get weather forecast using the coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://api.open-meteo.com/v1/forecast",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
-                "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
-                "forecast_days": "7",
-                "timezone": "${$geocodingResults.results[0].timezone}"
-            },
-            "stream": true,
-            "name": "weatherData"
-        },
-        {
-            "description": "Display 7-day weather forecast in table format",
-            "type": "table",
-            "title": "7-Day Weather Forecast",
-            "stream": false,
-            "name": "forecastTable",
-            "input": "${$zip($weatherData.daily.time, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.precipitation_sum, $weatherData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}"
-        },
-        {
-            "description": "Analyze weather data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$forecastTable}",
-            "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get a 7-day weather forecast with table display and LLM analysis.",
+  "type": "plan",
+  "version": "v0.0.5",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Paris",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults"
+    },
+    {
+      "description": "Get weather forecast using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/forecast",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "weatherData"
+    },
+    {
+      "description": "Display 7-day weather forecast in table format",
+      "type": "table",
+      "title": "7-Day Weather Forecast",
+      "stream": false,
+      "name": "forecastTable",
+      "input": "${$zip($weatherData.daily.time, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.precipitation_sum, $weatherData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}"
+    },
+    {
+      "description": "Analyze weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$forecastTable}",
+      "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response."
+    }
+  ]
 }
 ```
 
@@ -415,57 +423,57 @@ Here's an example plan that gets historical weather data for analysis:
 
 ```json
 {
-    "description": "Convert a city name to coordinates and get historical weather data for analysis",
-    "type": "plan",
-    "version": "v0.0.1",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "New York",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get historical weather data for the specified period",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://archive-api.open-meteo.com/v1/archive",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "start_date": "2023-01-01",
-                "end_date": "2023-12-31",
-                "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
-                "timezone": "${$geocodingResults.results[0].timezone}"
-            },
-            "stream": true,
-            "name": "historicalData"
-        },
-        {
-            "description": "Display daily historical weather data in table format",
-            "type": "table",
-            "title": "Daily Historical Weather Data",
-            "stream": false,
-            "name": "historicalTable",
-            "input": "${$zip($historicalData.daily.time, $historicalData.daily.temperature_2m_max, $historicalData.daily.temperature_2m_min, $historicalData.daily.precipitation_sum, $historicalData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}"
-        },
-        {
-            "description": "Analyze historical weather data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$historicalTable}",
-            "query": "Analyze the historical weather data for this location. The data contains daily temperature (max/min), precipitation, and weather codes. Provide insights about: 1) Temperature patterns and extremes, 2) Precipitation trends, 3) Seasonal variations, 4) Notable weather events. Include specific data points, averages, and practical observations about the weather patterns."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get historical weather data for analysis",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "New York",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults"
+    },
+    {
+      "description": "Get historical weather data for the specified period",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://archive-api.open-meteo.com/v1/archive",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "start_date": "2023-01-01",
+        "end_date": "2023-12-31",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "historicalData"
+    },
+    {
+      "description": "Display daily historical weather data in table format",
+      "type": "table",
+      "title": "Daily Historical Weather Data",
+      "stream": false,
+      "name": "historicalTable",
+      "input": "${$zip($historicalData.daily.time, $historicalData.daily.temperature_2m_max, $historicalData.daily.temperature_2m_min, $historicalData.daily.precipitation_sum, $historicalData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}"
+    },
+    {
+      "description": "Analyze historical weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$historicalTable}",
+      "query": "Analyze the historical weather data for this location. The data contains daily temperature (max/min), precipitation, and weather codes. Provide insights about: 1) Temperature patterns and extremes, 2) Precipitation trends, 3) Seasonal variations, 4) Notable weather events. Include specific data points, averages, and practical observations about the weather patterns."
+    }
+  ]
 }
 ```
 
@@ -475,59 +483,59 @@ Here's an example plan that gets marine weather forecast for a coastal location:
 
 ```json
 {
-    "description": "Convert a coastal city name to coordinates and get marine weather forecast",
-    "type": "plan",
-    "version": "v0.0.1",
-    "serial": [
-        {
-            "description": "Geocode the coastal city name to get coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Miami",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get marine weather forecast using the coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://marine-api.open-meteo.com/v1/marine",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "current": "wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,ocean_current_direction",
-                "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,swell_wave_height,sea_surface_temperature,ocean_current_velocity",
-                "daily": "wave_height_max,wave_direction_dominant,wave_period_max",
-                "forecast_days": "7",
-                "timezone": "${$geocodingResults.results[0].timezone}",
-                "cell_selection": "sea"
-            },
-            "stream": true,
-            "name": "marineData"
-        },
-        {
-            "description": "Display 7-day marine forecast in table format",
-            "type": "table",
-            "title": "7-Day Marine Forecast",
-            "stream": false,
-            "name": "marineTable",
-            "input": "${$zip($marineData.daily.time, $marineData.daily.wave_height_max, $marineData.daily.wave_direction_dominant, $marineData.daily.wave_period_max) ~> $map(function($row) { {\"date\": $row[0], \"wave_height_max\": $row[1], \"wave_direction_dominant\": $row[2], \"wave_period_max\": $row[3]} })}"
-        },
-        {
-            "description": "Analyze marine weather data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$marineTable}",
-            "query": "Analyze the marine weather forecast data for this coastal location. Provide insights about wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what to expect in the coming days."
-        }
-    ]
+  "description": "Convert a coastal city name to coordinates and get marine weather forecast",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the coastal city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Miami",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults"
+    },
+    {
+      "description": "Get marine weather forecast using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://marine-api.open-meteo.com/v1/marine",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,ocean_current_direction",
+        "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,swell_wave_height,sea_surface_temperature,ocean_current_velocity",
+        "daily": "wave_height_max,wave_direction_dominant,wave_period_max",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}",
+        "cell_selection": "sea"
+      },
+      "stream": true,
+      "name": "marineData"
+    },
+    {
+      "description": "Display 7-day marine forecast in table format",
+      "type": "table",
+      "title": "7-Day Marine Forecast",
+      "stream": false,
+      "name": "marineTable",
+      "input": "${$zip($marineData.daily.time, $marineData.daily.wave_height_max, $marineData.daily.wave_direction_dominant, $marineData.daily.wave_period_max) ~> $map(function($row) { {\"date\": $row[0], \"wave_height_max\": $row[1], \"wave_direction_dominant\": $row[2], \"wave_period_max\": $row[3]} })}"
+    },
+    {
+      "description": "Analyze marine weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$marineTable}",
+      "query": "Analyze the marine weather forecast data for this coastal location. Provide insights about wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what to expect in the coming days."
+    }
+  ]
 }
 ```
 
@@ -537,58 +545,58 @@ Here's an example plan that gets air quality data for a location:
 
 ```json
 {
-    "description": "Convert a city name to coordinates and get air quality forecast",
-    "type": "plan",
-    "version": "v0.0.1",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Berlin",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get air quality data using the coordinates",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "current": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
-                "hourly": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
-                "forecast_days": "5",
-                "timezone": "${$geocodingResults.results[0].timezone}",
-                "domains": "auto"
-            },
-            "stream": true,
-            "name": "airQualityData"
-        },
-        {
-            "description": "Display current air quality data in table format",
-            "type": "table",
-            "title": "Current Air Quality Data",
-            "stream": false,
-            "name": "airQualityTable",
-            "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $airQualityData.latitude, \"longitude\": $airQualityData.longitude, \"current_pm10\": $airQualityData.current.pm10, \"current_pm2_5\": $airQualityData.current.pm2_5, \"current_carbon_monoxide\": $airQualityData.current.carbon_monoxide, \"current_nitrogen_dioxide\": $airQualityData.current.nitrogen_dioxide, \"current_ozone\": $airQualityData.current.ozone, \"current_sulphur_dioxide\": $airQualityData.current.sulphur_dioxide, \"current_european_aqi\": $airQualityData.current.european_aqi, \"current_us_aqi\": $airQualityData.current.us_aqi, \"timezone\": $airQualityData.timezone}]}"
-        },
-        {
-            "description": "Analyze air quality data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$airQualityTable}",
-            "query": "Analyze the air quality data for this location. Provide insights about current air quality conditions, health implications, and recommendations for outdoor activities. Include interpretation of both European and US Air Quality Indices."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get air quality forecast",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Berlin",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults"
+    },
+    {
+      "description": "Get air quality data using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
+        "hourly": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
+        "forecast_days": "5",
+        "timezone": "${$geocodingResults.results[0].timezone}",
+        "domains": "auto"
+      },
+      "stream": true,
+      "name": "airQualityData"
+    },
+    {
+      "description": "Display current air quality data in table format",
+      "type": "table",
+      "title": "Current Air Quality Data",
+      "stream": false,
+      "name": "airQualityTable",
+      "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $airQualityData.latitude, \"longitude\": $airQualityData.longitude, \"current_pm10\": $airQualityData.current.pm10, \"current_pm2_5\": $airQualityData.current.pm2_5, \"current_carbon_monoxide\": $airQualityData.current.carbon_monoxide, \"current_nitrogen_dioxide\": $airQualityData.current.nitrogen_dioxide, \"current_ozone\": $airQualityData.current.ozone, \"current_sulphur_dioxide\": $airQualityData.current.sulphur_dioxide, \"current_european_aqi\": $airQualityData.current.european_aqi, \"current_us_aqi\": $airQualityData.current.us_aqi, \"timezone\": $airQualityData.timezone}]}"
+    },
+    {
+      "description": "Analyze air quality data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$airQualityTable}",
+      "query": "Analyze the air quality data for this location. Provide insights about current air quality conditions, health implications, and recommendations for outdoor activities. Include interpretation of both European and US Air Quality Indices."
+    }
+  ]
 }
 ```
 

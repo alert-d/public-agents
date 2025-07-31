@@ -6,7 +6,7 @@
     "serial": [
         {
             "description": "Geocode the coastal city name to get coordinates",
-            "type": "restful",
+            "type": "fetch",
             "method": "GET",
             "url": "https://geocoding-api.open-meteo.com/v1/search",
             "params": {
@@ -20,7 +20,7 @@
         },
         {
             "description": "Get marine weather forecast using the coordinates",
-            "type": "restful",
+            "type": "fetch",
             "method": "GET",
             "url": "https://marine-api.open-meteo.com/v1/marine",
             "params": {

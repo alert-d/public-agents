@@ -6,7 +6,7 @@
     "serial": [
         {
             "description": "Geocode the city name to get coordinates",
-            "type": "restful",
+            "type": "fetch",
             "method": "GET",
             "url": "https://geocoding-api.open-meteo.com/v1/search",
             "params": {
@@ -20,7 +20,7 @@
         },
         {
             "description": "Get weather forecast using the coordinates",
-            "type": "restful",
+            "type": "fetch",
             "method": "GET",
             "url": "https://api.open-meteo.com/v1/forecast",
             "params": {

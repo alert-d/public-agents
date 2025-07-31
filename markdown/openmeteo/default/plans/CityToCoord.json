@@ -5,7 +5,7 @@
     "serial": [
         {
             "name": "geocode",
-            "type": "restful",
+            "type": "fetch",
             "description": "Convert city name to coordinates using forward geocoding with selective extraction",
             "url": "https://geocoding-api.open-meteo.com/v1/search",
             "params": {
