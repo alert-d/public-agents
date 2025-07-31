@@ -1,4 +1,0 @@
-type: openmeteo
-extends: openmeteo/default
-examplesDir: plans
-getExampleContent: ${function($example){$example}}

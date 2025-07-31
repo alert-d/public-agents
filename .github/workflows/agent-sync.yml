@@ -123,6 +123,58 @@ jobs:
               if cp -r "$temp_dir/$agent_type"/* "markdown/$agent_type/"; then
                 echo "Successfully copied agent files"
                 
+                # Validate agent.yaml has required fields
+                if [ -f "markdown/$agent_type/agent.yaml" ]; then
+                  echo "Validating agent.yaml structure..."
+                  
+                  # Extract required fields
+                  agent_type_from_yaml=$(yq eval '.type' "markdown/$agent_type/agent.yaml" 2>/dev/null | tr -d '"')
+                  examples_field=$(yq eval '.examples' "markdown/$agent_type/agent.yaml" 2>/dev/null)
+                  scm_field=$(yq eval '.scm' "markdown/$agent_type/agent.yaml" 2>/dev/null | tr -d '"')
+                  
+                  # Validate type field
+                  if [ -z "$agent_type_from_yaml" ] || [ "$agent_type_from_yaml" = "null" ]; then
+                    echo "Error: Missing or invalid 'type' field in agent.yaml"
+                    rm -rf "markdown/$agent_type"
+                    rm -rf "$temp_dir"
+                    exit 1
+                  fi
+                  
+                  # Validate examples field exists
+                  if [ -z "$examples_field" ] || [ "$examples_field" = "null" ]; then
+                    echo "Error: Missing 'examples' field in agent.yaml"
+                    rm -rf "markdown/$agent_type"
+                    rm -rf "$temp_dir"
+                    exit 1
+                  fi
+                  
+                  # Validate scm field
+                  if [ -z "$scm_field" ] || [ "$scm_field" = "null" ]; then
+                    echo "Error: Missing or invalid 'scm' field in agent.yaml"
+                    rm -rf "markdown/$agent_type"
+                    rm -rf "$temp_dir"
+                    exit 1
+                  fi
+                  
+                  # Validate scm field format (should be a repo URL)
+                  if [[ ! "$scm_field" =~ ^(https://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
+                    echo "Error: Invalid 'scm' field format in agent.yaml: $scm_field"
+                    rm -rf "markdown/$agent_type"
+                    rm -rf "$temp_dir"
+                    exit 1
+                  fi
+                  
+                  echo "✅ Agent validation passed:"
+                  echo "  - Type: $agent_type_from_yaml"
+                  echo "  - Examples: present"
+                  echo "  - SCM: $scm_field"
+                else
+                  echo "Error: agent.yaml not found in $agent_type directory"
+                  rm -rf "markdown/$agent_type"
+                  rm -rf "$temp_dir"
+                  exit 1
+                fi
+                
                 # Verify no sensitive files were copied
                 sensitive_files=$(find "markdown/$agent_type" -name "*.key" -o -name "*.pem" -o -name ".env*" -o -name "secrets.*" -o -name "*.token" -o -name "*.secret" 2>/dev/null | wc -l)
                 if [ "$sensitive_files" -gt 0 ]; then
