@@ -49,11 +49,3 @@ Each agent has detailed documentation and usage examples:
 
 - **[OpenMeteo Documentation](./markdown/openmeteo/docs/openmeteo.md)**: Complete API reference
 - **Agent-specific docs**: Available in each agent's directory under `markdown/openmeteo/`
-
----
-
-<div align="center">
-
-_Built with ❤️ for the AlertD exchange ecosystem_
-
-</div>

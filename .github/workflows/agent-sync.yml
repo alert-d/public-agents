@@ -68,23 +68,6 @@ jobs:
               exit 1
             fi
             
-            # Validate repo URL format and allowed domains
-            allowed_domains="github.com,gitlab.com,bitbucket.org"
-            repo_domain=$(echo "$repo_url" | sed -E 's|^https?://([^/]+)/.*|\1|' | sed -E 's|^git@([^:]+):.*|\1|')
-            
-            if [[ ! "$allowed_domains" =~ "$repo_domain" ]]; then
-              echo "Error: Repository domain '$repo_domain' not in allowed list: $allowed_domains"
-              exit 1
-            fi
-            
-            # Validate repo URL format
-            echo "Debug: Validating repo URL: '$repo_url'"
-            if [[ ! "$repo_url" =~ ^(https?://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
-              echo "Error: Invalid repo URL format: $repo_url"
-              echo "Debug: URL does not match pattern: ^(https?://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$"
-              exit 1
-            fi
-            
             # Convert SSH URLs to HTTPS for better compatibility
             if [[ "$repo_url" == git@* ]]; then
               repo_url=$(echo "$repo_url" | sed 's|git@|https://|' | sed 's|:|/|')
