@@ -145,12 +145,40 @@ jobs:
                   echo "Warning: No meta.yaml found in imported agent directory"
                 fi
                 
-                # Verify no sensitive files were copied
-                sensitive_files=$(find "markdown/$agent_type" -name "*.key" -o -name "*.pem" -o -name ".env*" -o -name "secrets.*" -o -name "*.token" -o -name "*.secret" 2>/dev/null | wc -l)
-                if [ "$sensitive_files" -gt 0 ]; then
-                  echo "Warning: Found $sensitive_files potential sensitive files in copied agent"
-                  # Don't fail, but log the warning
+                            # Verify no sensitive files were copied
+            sensitive_files=$(find "markdown/$agent_type" -name "*.key" -o -name "*.pem" -o -name ".env*" -o -name "secrets.*" -o -name "*.token" -o -name "*.secret" 2>/dev/null | wc -l)
+            if [ "$sensitive_files" -gt 0 ]; then
+              echo "Warning: Found $sensitive_files potential sensitive files in copied agent"
+              # Don't fail, but log the warning
+            fi
+            
+            # Validate description.md files are under 128 characters
+            echo "Validating description.md files..."
+            description_files=$(find "markdown/$agent_type" -name "description.md" 2>/dev/null)
+            if [ -n "$description_files" ]; then
+              for desc_file in $description_files; do
+                echo "Checking $desc_file..."
+                
+                # Get the content and count characters (excluding newlines and leading/trailing whitespace)
+                content=$(cat "$desc_file" | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                char_count=${#content}
+                
+                echo "Description length: $char_count characters"
+                
+                if [ "$char_count" -gt 128 ]; then
+                  echo "❌ Error: $desc_file exceeds 128 character limit (has $char_count characters)"
+                  echo "Content: '$content'"
+                  echo "Please shorten the description to 128 characters or less"
+                  rm -rf "markdown/$agent_type"
+                  rm -rf "$temp_dir"
+                  exit 1
+                else
+                  echo "✅ $desc_file is within limit ($char_count/128 characters)"
                 fi
+              done
+            else
+              echo "No description.md files found in $agent_type"
+            fi
               else
                 echo "Error: Failed to copy agent files"
                 rm -rf "$temp_dir"
