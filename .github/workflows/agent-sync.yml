@@ -42,11 +42,11 @@ jobs:
             
             # Extract agent type and repo URL using yq for safer parsing
             agent_type=$(yq eval '.type' "meta.yaml" 2>/dev/null | tr -d '"')
-            repo_url=$(yq eval '.repo' "meta.yaml" 2>/dev/null | tr -d '"')
+            repo_url=$(yq eval '.scm' "meta.yaml" 2>/dev/null | tr -d '"')
             
             # Validate inputs
             if [ -z "$agent_type" ] || [ -z "$repo_url" ]; then
-              echo "Error: Missing required fields 'type' or 'repo' in meta.yaml"
+              echo "Error: Missing required fields 'type' or 'scm' in meta.yaml"
               exit 1
             fi
             
@@ -224,7 +224,7 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               https://api.github.com/repos/${{ github.repository }}/dispatches \
-              -d '{"event_type":"sync-docs","client_payload":{"repo_url":"$SOURCE_REPO_URL"}}')
+              -d '{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:${{ github.repository }}.git"}}')
 
             http_code=$(echo "$response" | tail -n1)
             response_body=$(echo "$response" | head -n -1)
