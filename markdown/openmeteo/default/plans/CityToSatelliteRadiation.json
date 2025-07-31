@@ -1,0 +1,54 @@
+{
+    "description": "Convert a city name to coordinates and get current satellite radiation data including global, direct, and diffuse solar radiation.",
+    "type": "plan",
+    "version": "v0.0.1",
+    "agent": "openmeteo/satelliteradiation",
+    "serial": [
+        {
+            "description": "Geocode the city name to get coordinates",
+            "type": "restful",
+            "method": "GET",
+            "url": "https://geocoding-api.open-meteo.com/v1/search",
+            "params": {
+                "name": "Madrid",
+                "count": "1",
+                "language": "en",
+                "format": "json"
+            },
+            "stream": true,
+            "name": "geocodingResults"
+        },
+        {
+            "description": "Get satellite radiation data using the coordinates",
+            "type": "restful",
+            "method": "GET",
+            "url": "https://satellite-api.open-meteo.com/v1/archive",
+            "params": {
+                "latitude": "${$geocodingResults.results[0].latitude}",
+                "longitude": "${$geocodingResults.results[0].longitude}",
+                "hourly": "shortwave_radiation,direct_radiation,diffuse_radiation,direct_normal_irradiance,terrestrial_radiation",
+                "daily": "sunrise,sunset,daylight_duration,sunshine_duration,shortwave_radiation_sum",
+                "timezone": "${$geocodingResults.results[0].timezone}",
+                "models": "satellite_radiation_seamless"
+            },
+            "stream": true,
+            "name": "radiationData"
+        },
+        {
+            "description": "Display hourly satellite radiation data in table format",
+            "type": "table",
+            "title": "Hourly Satellite Radiation",
+            "stream": false,
+            "name": "radiationTable",
+            "input": "${$zip($radiationData.hourly.time, $radiationData.hourly.shortwave_radiation, $radiationData.hourly.direct_radiation, $radiationData.hourly.diffuse_radiation, $radiationData.hourly.direct_normal_irradiance, $radiationData.hourly.terrestrial_radiation) ~> $map(function($row) { {\"time\": $row[0], \"shortwave_radiation\": $row[1], \"direct_radiation\": $row[2], \"diffuse_radiation\": $row[3], \"direct_normal_irradiance\": $row[4], \"terrestrial_radiation\": $row[5]} })}"
+        },
+        {
+            "description": "Analyze satellite radiation data and provide insights",
+            "model": "gpt-4",
+            "type": "llm",
+            "stream": true,
+            "input": "${$radiationTable}",
+            "query": "Analyze the satellite radiation data for this location. Provide insights about current solar radiation conditions, solar energy potential, and recommendations for solar applications. Include interpretation of global, direct, and diffuse radiation components."
+        }
+    ]
+}
