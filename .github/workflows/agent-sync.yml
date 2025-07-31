@@ -28,11 +28,6 @@ jobs:
         with:
           token: ${{ secrets.DOC_SYNC }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
       - name: Process meta.yaml if present
         run: |
           if [ -f "meta.yaml" ]; then
