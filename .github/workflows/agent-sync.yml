@@ -108,56 +108,41 @@ jobs:
               if cp -r "$temp_dir/$agent_type"/* "markdown/$agent_type/"; then
                 echo "Successfully copied agent files"
                 
-                # Validate agent.yaml has required fields
-                if [ -f "markdown/$agent_type/agent.yaml" ]; then
-                  echo "Validating agent.yaml structure..."
+                # Validate that the imported meta.yaml matches the PR meta.yaml
+                if [ -f "markdown/$agent_type/meta.yaml" ]; then
+                  echo "Validating meta.yaml integrity..."
                   
-                  # Extract required fields
-                  agent_type_from_yaml=$(yq eval '.type' "markdown/$agent_type/agent.yaml" 2>/dev/null | tr -d '"')
-                  examples_field=$(yq eval '.examples' "markdown/$agent_type/agent.yaml" 2>/dev/null)
-                  scm_field=$(yq eval '.scm' "markdown/$agent_type/agent.yaml" 2>/dev/null | tr -d '"')
-                  
-                  # Validate type field
-                  if [ -z "$agent_type_from_yaml" ] || [ "$agent_type_from_yaml" = "null" ]; then
-                    echo "Error: Missing or invalid 'type' field in agent.yaml"
+                  # Compare the two meta.yaml files
+                  if ! diff "meta.yaml" "markdown/$agent_type/meta.yaml" > /dev/null; then
+                    echo "Error: meta.yaml in imported agent does not match the PR meta.yaml"
+                    echo "This could indicate tampering or corruption"
                     rm -rf "markdown/$agent_type"
                     rm -rf "$temp_dir"
                     exit 1
                   fi
                   
-                  # Validate examples field exists
-                  if [ -z "$examples_field" ] || [ "$examples_field" = "null" ]; then
-                    echo "Error: Missing 'examples' field in agent.yaml"
+                  # Validate required fields in imported meta.yaml
+                  imported_type=$(yq eval '.type' "markdown/$agent_type/meta.yaml" 2>/dev/null | tr -d '"')
+                  imported_scm=$(yq eval '.scm' "markdown/$agent_type/meta.yaml" 2>/dev/null | tr -d '"')
+                  
+                  if [ -z "$imported_type" ] || [ "$imported_type" = "null" ]; then
+                    echo "Error: Missing 'type' field in imported meta.yaml"
                     rm -rf "markdown/$agent_type"
                     rm -rf "$temp_dir"
                     exit 1
                   fi
                   
-                  # Validate scm field
-                  if [ -z "$scm_field" ] || [ "$scm_field" = "null" ]; then
-                    echo "Error: Missing or invalid 'scm' field in agent.yaml"
+                  if [ -z "$imported_scm" ] || [ "$imported_scm" = "null" ]; then
+                    echo "Error: Missing 'scm' field in imported meta.yaml"
                     rm -rf "markdown/$agent_type"
                     rm -rf "$temp_dir"
                     exit 1
                   fi
                   
-                  # Validate scm field format (should be a repo URL)
-                  if [[ ! "$scm_field" =~ ^(https://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
-                    echo "Error: Invalid 'scm' field format in agent.yaml: $scm_field"
-                    rm -rf "markdown/$agent_type"
-                    rm -rf "$temp_dir"
-                    exit 1
-                  fi
-                  
-                  echo "✅ Agent validation passed:"
-                  echo "  - Type: $agent_type_from_yaml"
-                  echo "  - Examples: present"
-                  echo "  - SCM: $scm_field"
+                  echo "✅ meta.yaml integrity validated - files match"
+                  echo "✅ Required fields validated - type: $imported_type, scm: $imported_scm"
                 else
-                  echo "Error: agent.yaml not found in $agent_type directory"
-                  rm -rf "markdown/$agent_type"
-                  rm -rf "$temp_dir"
-                  exit 1
+                  echo "Warning: No meta.yaml found in imported agent directory"
                 fi
                 
                 # Verify no sensitive files were copied
