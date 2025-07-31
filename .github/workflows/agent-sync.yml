@@ -78,8 +78,10 @@ jobs:
             fi
             
             # Validate repo URL format
-            if [[ ! "$repo_url" =~ ^(https://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
+            echo "Debug: Validating repo URL: '$repo_url'"
+            if [[ ! "$repo_url" =~ ^(https?://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$ ]]; then
               echo "Error: Invalid repo URL format: $repo_url"
+              echo "Debug: URL does not match pattern: ^(https?://|git@)[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(\.git)?$"
               exit 1
             fi
             
