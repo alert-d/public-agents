@@ -1,0 +1,159 @@
+{
+  "name": "FileManagement",
+  "version": "1.0.0",
+  "description": "Organize, backup, and maintain file systems with automated cleanup",
+  "steps": [
+    {
+      "id": "scan_directory",
+      "name": "Scan Target Directory",
+      "type": "file_operation",
+      "config": {
+        "target_path": "/path/to/target",
+        "recursive": true,
+        "file_patterns": ["*.*"],
+        "exclude_patterns": [".git/*", "node_modules/*", "*.tmp"],
+        "collect_metadata": true
+      },
+      "timeout": 300
+    },
+    {
+      "id": "categorize_files",
+      "name": "Categorize Files by Type",
+      "type": "data_transformation",
+      "config": {
+        "categorization": {
+          "documents": [".pdf", ".doc", ".docx", ".txt", ".rtf"],
+          "images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg"],
+          "videos": [".mp4", ".avi", ".mov", ".wmv", ".flv"],
+          "audio": [".mp3", ".wav", ".flac", ".aac", ".ogg"],
+          "archives": [".zip", ".rar", ".7z", ".tar", ".gz"],
+          "code": [".js", ".py", ".java", ".cpp", ".html", ".css"]
+        },
+        "output_format": "json"
+      },
+      "timeout": 120
+    },
+    {
+      "id": "create_backup",
+      "name": "Create Backup",
+      "type": "backup_operation",
+      "config": {
+        "source_path": "/path/to/target",
+        "backup_path": "/backup/daily",
+        "compression": "gzip",
+        "encryption": false,
+        "retention": {
+          "daily": 7,
+          "weekly": 4,
+          "monthly": 12
+        }
+      },
+      "timeout": 600,
+      "retry": {
+        "max_attempts": 2,
+        "delay": 60
+      }
+    },
+    {
+      "id": "organize_files",
+      "name": "Organize Files by Category",
+      "type": "file_operation",
+      "config": {
+        "organization_rules": [
+          {
+            "category": "documents",
+            "target_dir": "/organized/documents",
+            "subdirs": ["work", "personal", "archive"]
+          },
+          {
+            "category": "images",
+            "target_dir": "/organized/images",
+            "subdirs": ["photos", "screenshots", "designs"]
+          },
+          {
+            "category": "videos",
+            "target_dir": "/organized/videos",
+            "subdirs": ["movies", "recordings", "tutorials"]
+          }
+        ],
+        "move_duplicates": true,
+        "preserve_structure": false
+      },
+      "timeout": 480
+    },
+    {
+      "id": "cleanup_old_files",
+      "name": "Cleanup Old Files",
+      "type": "cleanup_operation",
+      "config": {
+        "rules": [
+          {
+            "pattern": "*.tmp",
+            "max_age_days": 1,
+            "action": "delete"
+          },
+          {
+            "pattern": "*.log",
+            "max_age_days": 30,
+            "action": "compress"
+          },
+          {
+            "pattern": "*.cache",
+            "max_age_days": 7,
+            "action": "delete"
+          }
+        ],
+        "dry_run": false,
+        "log_deletions": true
+      },
+      "timeout": 180
+    },
+    {
+      "id": "update_index",
+      "name": "Update File Index",
+      "type": "indexing",
+      "config": {
+        "index_path": "/index/file_index.json",
+        "include_metadata": true,
+        "searchable_fields": ["name", "type", "size", "modified"],
+        "update_frequency": "daily"
+      },
+      "timeout": 90
+    },
+    {
+      "id": "generate_report",
+      "name": "Generate File Management Report",
+      "type": "reporting",
+      "config": {
+        "template": "file_management_report.html",
+        "output_path": "file_report.html",
+        "include_stats": {
+          "total_files": true,
+          "total_size": true,
+          "by_category": true,
+          "by_age": true,
+          "duplicates": true
+        },
+        "charts": ["pie", "bar", "timeline"]
+      },
+      "timeout": 60
+    }
+  ],
+  "error_handling": {
+    "on_failure": "continue",
+    "log_errors": true,
+    "notify_on_error": false,
+    "cleanup_on_error": false
+  },
+  "outputs": {
+    "file_index": "/index/file_index.json",
+    "report": "file_report.html",
+    "backup_log": "backup.log",
+    "cleanup_log": "cleanup.log"
+  },
+  "scheduling": {
+    "frequency": "daily",
+    "time": "02:00",
+    "timezone": "UTC"
+  }
+}
