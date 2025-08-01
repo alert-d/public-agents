@@ -1,4 +1,0 @@
-type: testone
-examplesDir: plans
-getExampleContent: ${function($example){$example}}
-scm: https://github.com/utullyca/Agents.git
