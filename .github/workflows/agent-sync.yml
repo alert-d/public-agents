@@ -1,11 +1,6 @@
 name: Agent Sync Workflow
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "meta.yaml"
-      - ".github/workflows/agent-sync.yml"
   pull_request:
     types: [closed]
     branches: [main]
