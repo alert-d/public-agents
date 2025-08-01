@@ -1,55 +1,64 @@
 {
-    "description": "Convert a city name to coordinates and get a 7-day weather forecast with basic table display and LLM analysis.",
-    "type": "plan",
-    "version": "v0.0.5",
-    "agent": "openmeteo/weatherforecast",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Paris",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get weather forecast using the coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://api.open-meteo.com/v1/forecast",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
-                "hourly": "temperature_2m,precipitation,weather_code,wind_speed_10m",
-                "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
-                "forecast_days": "7",
-                "timezone": "${$geocodingResults.results[0].timezone}"
-            },
-            "stream": true,
-            "name": "weatherData"
-        },
-        {
-            "description": "Display 7-day weather forecast in table format",
-            "type": "table",
-            "title": "7-Day Weather Forecast",
-            "stream": false,
-            "name": "forecastTable",
-            "input": "${$zip($weatherData.daily.precipitation_sum, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.time, $weatherData.daily.weather_code) ~> $map(function($row) { {'date': $row[3], 'precipitation_sum': $row[0], 'temperature_2m_max': $row[1], 'temperature_2m_min': $row[2], 'weather_code': $row[4]} })}"
-        },
-        {
-            "description": "Analyze weather data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$forecastTable}",
-            "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get a 7-day weather forecast with basic table display and LLM analysis.",
+  "type": "plan",
+  "version": "v0.0.5",
+  "agent": "openmeteo/weatherforecast",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Paris",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].id, 'location id exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get weather forecast using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/forecast",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+        "hourly": "temperature_2m,precipitation,weather_code,wind_speed_10m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "weatherData"
+    },
+    {
+      "description": "Display 7-day weather forecast in table format",
+      "type": "table",
+      "title": "7-Day Weather Forecast",
+      "stream": false,
+      "name": "forecastTable",
+      "input": "${$zip($weatherData.daily.precipitation_sum, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.time, $weatherData.daily.weather_code) ~> $map(function($row) { {'date': $row[3], 'precipitation_sum': $row[0], 'temperature_2m_max': $row[1], 'temperature_2m_min': $row[2], 'weather_code': $row[4]} })}"
+    },
+    {
+      "description": "Analyze weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$forecastTable}",
+      "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response."
+    }
+  ]
 }

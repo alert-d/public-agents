@@ -1,55 +1,118 @@
 {
-    "description": "Convert a city name to coordinates and get current air quality data with major pollutants and air quality indices.",
-    "type": "plan",
-    "version": "v0.0.1",
-    "agent": "openmeteo/airquality",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Berlin",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get air quality data using the coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "current": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
-                "hourly": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
-                "forecast_days": "5",
-                "timezone": "${$geocodingResults.results[0].timezone}",
-                "domains": "auto"
-            },
-            "stream": true,
-            "name": "airQualityData"
-        },
-        {
-            "description": "Display current air quality data in table format",
-            "type": "table",
-            "title": "Current Air Quality Data",
-            "stream": false,
-            "name": "airQualityTable",
-            "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $airQualityData.latitude, \"longitude\": $airQualityData.longitude, \"current_pm10\": $airQualityData.current.pm10, \"current_pm2_5\": $airQualityData.current.pm2_5, \"current_carbon_monoxide\": $airQualityData.current.carbon_monoxide, \"current_nitrogen_dioxide\": $airQualityData.current.nitrogen_dioxide, \"current_ozone\": $airQualityData.current.ozone, \"current_sulphur_dioxide\": $airQualityData.current.sulphur_dioxide, \"current_european_aqi\": $airQualityData.current.european_aqi, \"current_us_aqi\": $airQualityData.current.us_aqi, \"timezone\": $airQualityData.timezone}]}"
-        },
-        {
-            "description": "Analyze air quality data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$airQualityTable}",
-            "query": "Analyze the air quality data for this location. Provide insights about current air quality conditions, health implications, and recommendations for outdoor activities. Include interpretation of both European and US Air Quality Indices."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get current air quality data with major pollutants and air quality indices.",
+  "type": "plan",
+  "version": "v0.0.1",
+  "agent": "openmeteo/airquality",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Berlin",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get air quality data using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://air-quality-api.open-meteo.com/v1/air-quality",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
+        "hourly": "pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,european_aqi,us_aqi",
+        "forecast_days": "5",
+        "timezone": "${$geocodingResults.results[0].timezone}",
+        "domains": "auto"
+      },
+      "stream": true,
+      "name": "airQualityData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.current, 'current air quality data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.pm10, 'pm10 data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.pm2_5, 'pm2_5 data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.carbon_monoxide, 'carbon monoxide data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.nitrogen_dioxide, 'nitrogen dioxide data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ozone, 'ozone data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.sulphur_dioxide, 'sulphur dioxide data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.european_aqi, 'european aqi data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.us_aqi, 'us aqi data exists in current air quality') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.latitude, 'latitude exists in air quality data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.longitude, 'longitude exists in air quality data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.timezone, 'timezone exists in air quality data') } }"
+      ]
+    },
+    {
+      "description": "Display current air quality data in table format",
+      "type": "table",
+      "title": "Current Air Quality Data",
+      "stream": false,
+      "name": "airQualityTable",
+      "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $airQualityData.latitude, \"longitude\": $airQualityData.longitude, \"current_pm10\": $airQualityData.current.pm10, \"current_pm2_5\": $airQualityData.current.pm2_5, \"current_carbon_monoxide\": $airQualityData.current.carbon_monoxide, \"current_nitrogen_dioxide\": $airQualityData.current.nitrogen_dioxide, \"current_ozone\": $airQualityData.current.ozone, \"current_sulphur_dioxide\": $airQualityData.current.sulphur_dioxide, \"current_european_aqi\": $airQualityData.current.european_aqi, \"current_us_aqi\": $airQualityData.current.us_aqi, \"timezone\": $airQualityData.timezone}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($airQualityData.latitude, 'latitude available for table') } }",
+        "${ function() { $test($airQualityData.longitude, 'longitude available for table') } }",
+        "${ function() { $test($airQualityData.current.pm10, 'pm10 data available for table') } }",
+        "${ function() { $test($airQualityData.current.pm2_5, 'pm2_5 data available for table') } }",
+        "${ function() { $test($airQualityData.current.carbon_monoxide, 'carbon monoxide data available for table') } }",
+        "${ function() { $test($airQualityData.current.nitrogen_dioxide, 'nitrogen dioxide data available for table') } }",
+        "${ function() { $test($airQualityData.current.ozone, 'ozone data available for table') } }",
+        "${ function() { $test($airQualityData.current.sulphur_dioxide, 'sulphur dioxide data available for table') } }",
+        "${ function() { $test($airQualityData.current.european_aqi, 'european aqi data available for table') } }",
+        "${ function() { $test($airQualityData.current.us_aqi, 'us aqi data available for table') } }",
+        "${ function() { $test($airQualityData.timezone, 'timezone available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].location, 'location field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_pm10, 'current_pm10 field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_pm2_5, 'current_pm2_5 field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_carbon_monoxide, 'current_carbon_monoxide field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_nitrogen_dioxide, 'current_nitrogen_dioxide field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_ozone, 'current_ozone field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_sulphur_dioxide, 'current_sulphur_dioxide field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_european_aqi, 'current_european_aqi field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].current_us_aqi, 'current_us_aqi field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze air quality data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$airQualityTable}",
+      "query": "Analyze the air quality data for this location. Provide insights about current air quality conditions, health implications, and recommendations for outdoor activities. Include interpretation of both European and US Air Quality Indices.",
+      "testInput": [
+        "${ function() { $test($airQualityTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($airQualityTable[0].location, 'location field exists in llm input') } }",
+        "${ function() { $test($airQualityTable[0].current_pm10, 'current_pm10 field exists in llm input') } }",
+        "${ function() { $test($airQualityTable[0].current_pm2_5, 'current_pm2_5 field exists in llm input') } }",
+        "${ function() { $test($airQualityTable[0].current_european_aqi, 'current_european_aqi field exists in llm input') } }",
+        "${ function() { $test($airQualityTable[0].current_us_aqi, 'current_us_aqi field exists in llm input') } }"
+      ]
+    }
+  ]
 }

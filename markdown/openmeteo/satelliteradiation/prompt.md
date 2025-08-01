@@ -177,7 +177,14 @@ Here's an example plan that gets solar radiation data for a location:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get solar radiation data using the coordinates",
@@ -195,7 +202,26 @@ Here's an example plan that gets solar radiation data for a location:
         "models": "satellite_radiation_seamless"
       },
       "stream": true,
-      "name": "radiationData"
+      "name": "radiationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.hourly, 'hourly radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.time, 'hourly time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.shortwave_radiation, 'hourly shortwave radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.direct_radiation, 'hourly direct radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.diffuse_radiation, 'hourly diffuse radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.direct_normal_irradiance, 'hourly direct normal irradiance data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunrise, 'daily sunrise data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunset, 'daily sunset data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.daylight_duration, 'daily daylight duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunshine_duration, 'daily sunshine duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.shortwave_radiation_sum, 'daily shortwave radiation sum data exists') } }"
+      ]
     },
     {
       "description": "Display solar radiation data in table format",
@@ -203,7 +229,22 @@ Here's an example plan that gets solar radiation data for a location:
       "title": "Solar Radiation Analysis",
       "stream": false,
       "name": "radiationTable",
-      "input": "${$zip($radiationData.hourly.time, $radiationData.hourly.shortwave_radiation, $radiationData.hourly.direct_radiation, $radiationData.hourly.diffuse_radiation, $radiationData.hourly.direct_normal_irradiance) ~> $map(function($row) { {\"date\": $row[0], \"shortwave_radiation\": $row[1], \"direct_radiation\": $row[2], \"diffuse_radiation\": $row[3], \"direct_normal_irradiance\": $row[4]} })}"
+      "input": "${$zip($radiationData.hourly.time, $radiationData.hourly.shortwave_radiation, $radiationData.hourly.direct_radiation, $radiationData.hourly.diffuse_radiation, $radiationData.hourly.direct_normal_irradiance) ~> $map(function($row) { {\"date\": $row[0], \"shortwave_radiation\": $row[1], \"direct_radiation\": $row[2], \"diffuse_radiation\": $row[3], \"direct_normal_irradiance\": $row[4]} })}",
+      "testInput": [
+        "${ function() { $test($radiationData.hourly.time, 'hourly time data available for table') } }",
+        "${ function() { $test($radiationData.hourly.shortwave_radiation, 'hourly shortwave radiation data available for table') } }",
+        "${ function() { $test($radiationData.hourly.direct_radiation, 'hourly direct radiation data available for table') } }",
+        "${ function() { $test($radiationData.hourly.diffuse_radiation, 'hourly diffuse radiation data available for table') } }",
+        "${ function() { $test($radiationData.hourly.direct_normal_irradiance, 'hourly direct normal irradiance data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].shortwave_radiation, 'shortwave_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].direct_radiation, 'direct_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].diffuse_radiation, 'diffuse_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].direct_normal_irradiance, 'direct_normal_irradiance field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze solar radiation data and provide insights",
@@ -211,7 +252,15 @@ Here's an example plan that gets solar radiation data for a location:
       "type": "llm",
       "stream": true,
       "input": "${$radiationTable}",
-      "query": "Analyze the solar radiation data for this location. Provide insights about solar resource availability, radiation patterns, and potential for solar energy applications. Include practical recommendations for solar panel installation and energy generation potential."
+      "query": "Analyze the solar radiation data for this location. Provide insights about solar resource availability, radiation patterns, and potential for solar energy applications. Include practical recommendations for solar panel installation and energy generation potential.",
+      "testInput": [
+        "${ function() { $test($radiationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($radiationTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].shortwave_radiation, 'shortwave_radiation field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].direct_radiation, 'direct_radiation field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].diffuse_radiation, 'diffuse_radiation field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].direct_normal_irradiance, 'direct_normal_irradiance field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -239,7 +288,14 @@ Here's an example plan that assesses solar energy potential for a location:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get solar radiation data with tilted surface analysis",
@@ -259,7 +315,25 @@ Here's an example plan that assesses solar energy potential for a location:
         "azimuth": "180"
       },
       "stream": true,
-      "name": "solarEnergyData"
+      "name": "solarEnergyData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.hourly, 'hourly solar energy data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.time, 'hourly time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.shortwave_radiation, 'hourly shortwave radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.global_tilted_irradiance, 'hourly global tilted irradiance data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.direct_normal_irradiance, 'hourly direct normal irradiance data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily solar energy data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunrise, 'daily sunrise data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunset, 'daily sunset data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.daylight_duration, 'daily daylight duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunshine_duration, 'daily sunshine duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.shortwave_radiation_sum, 'daily shortwave radiation sum data exists') } }"
+      ]
     },
     {
       "description": "Display solar energy assessment data in table format",
@@ -267,7 +341,20 @@ Here's an example plan that assesses solar energy potential for a location:
       "title": "Solar Energy Assessment",
       "stream": false,
       "name": "solarEnergyTable",
-      "input": "${$zip($solarEnergyData.hourly.time, $solarEnergyData.hourly.shortwave_radiation, $solarEnergyData.hourly.global_tilted_irradiance, $solarEnergyData.hourly.direct_normal_irradiance) ~> $map(function($row) { {\"date\": $row[0], \"shortwave_radiation\": $row[1], \"global_tilted_irradiance\": $row[2], \"direct_normal_irradiance\": $row[3]} })}"
+      "input": "${$zip($solarEnergyData.hourly.time, $solarEnergyData.hourly.shortwave_radiation, $solarEnergyData.hourly.global_tilted_irradiance, $solarEnergyData.hourly.direct_normal_irradiance) ~> $map(function($row) { {\"date\": $row[0], \"shortwave_radiation\": $row[1], \"global_tilted_irradiance\": $row[2], \"direct_normal_irradiance\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($solarEnergyData.hourly.time, 'hourly time data available for table') } }",
+        "${ function() { $test($solarEnergyData.hourly.shortwave_radiation, 'hourly shortwave radiation data available for table') } }",
+        "${ function() { $test($solarEnergyData.hourly.global_tilted_irradiance, 'hourly global tilted irradiance data available for table') } }",
+        "${ function() { $test($solarEnergyData.hourly.direct_normal_irradiance, 'hourly direct normal irradiance data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].shortwave_radiation, 'shortwave_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].global_tilted_irradiance, 'global_tilted_irradiance field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].direct_normal_irradiance, 'direct_normal_irradiance field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze solar energy potential and provide insights",
@@ -275,7 +362,14 @@ Here's an example plan that assesses solar energy potential for a location:
       "type": "llm",
       "stream": true,
       "input": "${$solarEnergyTable}",
-      "query": "Analyze the solar energy potential for this location. The data includes global horizontal irradiance, tilted surface irradiance, and direct normal irradiance. Provide insights about: 1) Solar resource availability, 2) Optimal panel orientation, 3) Energy generation potential, 4) Seasonal variations. Include specific recommendations for solar panel installation and expected energy output."
+      "query": "Analyze the solar energy potential for this location. Provide insights about solar resource availability, optimal panel orientation, and energy generation potential. Include practical recommendations for solar panel installation and system sizing.",
+      "testInput": [
+        "${ function() { $test($solarEnergyTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($solarEnergyTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($solarEnergyTable[0].shortwave_radiation, 'shortwave_radiation field exists in llm input') } }",
+        "${ function() { $test($solarEnergyTable[0].global_tilted_irradiance, 'global_tilted_irradiance field exists in llm input') } }",
+        "${ function() { $test($solarEnergyTable[0].direct_normal_irradiance, 'direct_normal_irradiance field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -303,7 +397,14 @@ Here's an example plan that analyzes historical solar radiation data:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get historical solar radiation data for analysis",
@@ -320,7 +421,21 @@ Here's an example plan that analyzes historical solar radiation data:
         "models": "satellite_radiation_seamless"
       },
       "stream": true,
-      "name": "historicalRadiationData"
+      "name": "historicalRadiationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunrise, 'daily sunrise data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunset, 'daily sunset data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.daylight_duration, 'daily daylight duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunshine_duration, 'daily sunshine duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.shortwave_radiation_sum, 'daily shortwave radiation sum data exists') } }"
+      ]
     },
     {
       "description": "Display historical solar radiation data in table format",
@@ -328,7 +443,24 @@ Here's an example plan that analyzes historical solar radiation data:
       "title": "Historical Solar Radiation Analysis",
       "stream": false,
       "name": "historicalRadiationTable",
-      "input": "${$zip($historicalRadiationData.daily.time, $historicalRadiationData.daily.sunrise, $historicalRadiationData.daily.sunset, $historicalRadiationData.daily.daylight_duration, $historicalRadiationData.daily.sunshine_duration, $historicalRadiationData.daily.shortwave_radiation_sum) ~> $map(function($row) { {\"date\": $row[0], \"sunrise\": $row[1], \"sunset\": $row[2], \"daylight_duration\": $row[3], \"sunshine_duration\": $row[4], \"shortwave_radiation_sum\": $row[5]} })}"
+      "input": "${$zip($historicalRadiationData.daily.time, $historicalRadiationData.daily.sunrise, $historicalRadiationData.daily.sunset, $historicalRadiationData.daily.daylight_duration, $historicalRadiationData.daily.sunshine_duration, $historicalRadiationData.daily.shortwave_radiation_sum) ~> $map(function($row) { {\"date\": $row[0], \"sunrise\": $row[1], \"sunset\": $row[2], \"daylight_duration\": $row[3], \"sunshine_duration\": $row[4], \"shortwave_radiation_sum\": $row[5]} })}",
+      "testInput": [
+        "${ function() { $test($historicalRadiationData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($historicalRadiationData.daily.sunrise, 'daily sunrise data available for table') } }",
+        "${ function() { $test($historicalRadiationData.daily.sunset, 'daily sunset data available for table') } }",
+        "${ function() { $test($historicalRadiationData.daily.daylight_duration, 'daily daylight duration data available for table') } }",
+        "${ function() { $test($historicalRadiationData.daily.sunshine_duration, 'daily sunshine duration data available for table') } }",
+        "${ function() { $test($historicalRadiationData.daily.shortwave_radiation_sum, 'daily shortwave radiation sum data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].sunrise, 'sunrise field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].sunset, 'sunset field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].daylight_duration, 'daylight_duration field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].sunshine_duration, 'sunshine_duration field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].shortwave_radiation_sum, 'shortwave_radiation_sum field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze historical solar radiation patterns and provide insights",
@@ -336,7 +468,16 @@ Here's an example plan that analyzes historical solar radiation data:
       "type": "llm",
       "stream": true,
       "input": "${$historicalRadiationTable}",
-      "query": "Analyze the historical solar radiation data for this location. The data contains daily sunrise, sunset, daylight duration, sunshine duration, and total shortwave radiation. Provide insights about: 1) Seasonal solar patterns, 2) Annual solar resource availability, 3) Optimal periods for solar energy generation, 4) Long-term solar trends. Include specific data points, averages, and practical observations about solar radiation patterns."
+      "query": "Analyze the historical solar radiation data for this location. The data contains daily sunrise, sunset, daylight duration, sunshine duration, and total shortwave radiation. Provide insights about: 1) Seasonal solar patterns, 2) Annual solar resource availability, 3) Optimal periods for solar energy generation, 4) Long-term solar trends. Include specific data points, averages, and practical observations about solar radiation patterns.",
+      "testInput": [
+        "${ function() { $test($historicalRadiationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($historicalRadiationTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($historicalRadiationTable[0].sunrise, 'sunrise field exists in llm input') } }",
+        "${ function() { $test($historicalRadiationTable[0].sunset, 'sunset field exists in llm input') } }",
+        "${ function() { $test($historicalRadiationTable[0].daylight_duration, 'daylight_duration field exists in llm input') } }",
+        "${ function() { $test($historicalRadiationTable[0].sunshine_duration, 'sunshine_duration field exists in llm input') } }",
+        "${ function() { $test($historicalRadiationTable[0].shortwave_radiation_sum, 'shortwave_radiation_sum field exists in llm input') } }"
+      ]
     }
   ]
 }

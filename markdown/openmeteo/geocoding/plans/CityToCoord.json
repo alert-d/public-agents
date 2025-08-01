@@ -1,36 +1,69 @@
 {
-    "description": "Convert a city name to geographic coordinates using Open-Meteo geocoding API with selective data extraction",
-    "type": "plan",
-    "version": "v0.0.2",
-    "serial": [
-        {
-            "name": "geocode",
-            "type": "fetch",
-            "description": "Convert city name to coordinates using forward geocoding with selective extraction",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Monaco",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": false
-        },
-        {
-            "name": "geocodeTable",
-            "type": "table",
-            "description": "Display geocoding results in table format",
-            "title": "Geocoding Results",
-            "stream": false,
-            "input": "${[{\"place_name\": $geocode.results[0].name, \"latitude\": $geocode.results[0].latitude, \"longitude\": $geocode.results[0].longitude, \"country_code\": $geocode.results[0].country_code, \"timezone\": $geocode.results[0].timezone}]}"
-        },
-        {
-            "name": "geocodeAnalysis",
-            "type": "llm",
-            "description": "Analyze and present geocoding results",
-            "model": "gpt-4",
-            "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location.",
-            "stream": true
-        }
-    ]
+  "description": "Convert a city name to geographic coordinates using Open-Meteo geocoding API with selective data extraction",
+  "type": "plan",
+  "version": "v0.0.2",
+  "serial": [
+    {
+      "name": "geocode",
+      "type": "fetch",
+      "description": "Convert city name to coordinates using forward geocoding with selective extraction",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Monaco",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": false,
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].id, 'location id exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].population, 'population exists in geocoding results') } }"
+      ]
+    },
+    {
+      "name": "geocodeTable",
+      "type": "table",
+      "description": "Display geocoding results in table format",
+      "title": "Geocoding Results",
+      "stream": false,
+      "input": "${[{\"place_name\": $geocode.results[0].name, \"latitude\": $geocode.results[0].latitude, \"longitude\": $geocode.results[0].longitude, \"country_code\": $geocode.results[0].country_code, \"timezone\": $geocode.results[0].timezone}]}",
+      "testInput": [
+        "${ function() { $test($geocode.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocode.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocode.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($geocode.results[0].country_code, 'country code available for table') } }",
+        "${ function() { $test($geocode.results[0].timezone, 'timezone available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }"
+      ]
+    },
+    {
+      "name": "geocodeAnalysis",
+      "type": "llm",
+      "description": "Analyze and present geocoding results",
+      "model": "gpt-4",
+      "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location.",
+      "stream": true,
+      "testInput": [
+        "${ function() { $test($geocodeTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($geocodeTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($geocodeTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($geocodeTable[0].longitude, 'longitude field exists in llm input') } }",
+        "${ function() { $test($geocodeTable[0].country_code, 'country_code field exists in llm input') } }",
+        "${ function() { $test($geocodeTable[0].timezone, 'timezone field exists in llm input') } }"
+      ]
+    }
+  ]
 }

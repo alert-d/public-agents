@@ -147,7 +147,16 @@ Here's an example plan that converts a place name to coordinates:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].id, 'location id exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Display geocoding results in table format",
@@ -155,7 +164,22 @@ Here's an example plan that converts a place name to coordinates:
       "title": "Geocoding Results",
       "stream": false,
       "name": "geocodingTable",
-      "input": "${[{\"place_name\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"country_code\": $geocodingResults.results[0].country_code, \"timezone\": $geocodingResults.results[0].timezone}]}"
+      "input": "${[{\"place_name\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"country_code\": $geocodingResults.results[0].country_code, \"timezone\": $geocodingResults.results[0].timezone}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].country_code, 'country code available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze and present geocoding results",
@@ -163,7 +187,15 @@ Here's an example plan that converts a place name to coordinates:
       "type": "llm",
       "stream": true,
       "input": "${$geocodingTable}",
-      "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location."
+      "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location.",
+      "testInput": [
+        "${ function() { $test($geocodingTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($geocodingTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].longitude, 'longitude field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].country_code, 'country_code field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].timezone, 'timezone field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -191,7 +223,12 @@ Here's an example plan that converts coordinates to a place name:
         "format": "json"
       },
       "stream": true,
-      "name": "reverseGeocodingResults"
+      "name": "reverseGeocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.name, 'place name exists in reverse geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.country_code, 'country code exists in reverse geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.timezone, 'timezone exists in reverse geocoding results') } }"
+      ]
     },
     {
       "description": "Display reverse geocoding results in table format",
@@ -199,7 +236,20 @@ Here's an example plan that converts coordinates to a place name:
       "title": "Reverse Geocoding Results",
       "stream": false,
       "name": "reverseGeocodingTable",
-      "input": "${[{\"latitude\": \"35.6895\", \"longitude\": \"139.6917\", \"place_name\": $reverseGeocodingResults.name, \"country_code\": $reverseGeocodingResults.country_code, \"timezone\": $reverseGeocodingResults.timezone}]}"
+      "input": "${[{\"latitude\": \"35.6895\", \"longitude\": \"139.6917\", \"place_name\": $reverseGeocodingResults.name, \"country_code\": $reverseGeocodingResults.country_code, \"timezone\": $reverseGeocodingResults.timezone}]}",
+      "testInput": [
+        "${ function() { $test($reverseGeocodingResults.name, 'place name available for table') } }",
+        "${ function() { $test($reverseGeocodingResults.country_code, 'country code available for table') } }",
+        "${ function() { $test($reverseGeocodingResults.timezone, 'timezone available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze and present reverse geocoding results",
@@ -207,7 +257,15 @@ Here's an example plan that converts coordinates to a place name:
       "type": "llm",
       "stream": true,
       "input": "${$reverseGeocodingTable}",
-      "query": "Based on the reverse geocoding data provided, give me a comprehensive analysis of this location. Include: 1) The exact place name and coordinates, 2) Location details and significance, 3) Timezone information and its implications, 4) How this location could be used for weather queries. Provide practical insights about this location."
+      "query": "Based on the reverse geocoding data provided, give me a comprehensive analysis of this location. Include: 1) The exact place name and coordinates, 2) Location details and significance, 3) Timezone information and its implications, 4) How this location could be used for weather queries. Provide practical insights about this location.",
+      "testInput": [
+        "${ function() { $test($reverseGeocodingTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($reverseGeocodingTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].longitude, 'longitude field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].country_code, 'country_code field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].timezone, 'timezone field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -235,7 +293,15 @@ Here's an example plan that geocodes multiple locations:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults1"
+      "name": "geocodingResults1",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Geocode the second place name",
@@ -249,7 +315,15 @@ Here's an example plan that geocodes multiple locations:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults2"
+      "name": "geocodingResults2",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Display multiple geocoding results in table format",
@@ -257,7 +331,20 @@ Here's an example plan that geocodes multiple locations:
       "title": "Multiple Geocoding Results",
       "stream": false,
       "name": "multipleGeocodingTable",
-      "input": "${[{\"place_name\": $geocodingResults1.results[0].name, \"latitude\": $geocodingResults1.results[0].latitude, \"longitude\": $geocodingResults1.results[0].longitude, \"country_code\": $geocodingResults1.results[0].country_code, \"timezone\": $geocodingResults1.results[0].timezone}, {\"place_name\": $geocodingResults2.results[0].name, \"latitude\": $geocodingResults2.results[0].latitude, \"longitude\": $geocodingResults2.results[0].longitude, \"country_code\": $geocodingResults2.results[0].country_code, \"timezone\": $geocodingResults2.results[0].timezone}]}"
+      "input": "${[{\"place_name\": $geocodingResults1.results[0].name, \"latitude\": $geocodingResults1.results[0].latitude, \"longitude\": $geocodingResults1.results[0].longitude, \"country_code\": $geocodingResults1.results[0].country_code, \"timezone\": $geocodingResults1.results[0].timezone}, {\"place_name\": $geocodingResults2.results[0].name, \"latitude\": $geocodingResults2.results[0].latitude, \"longitude\": $geocodingResults2.results[0].longitude, \"country_code\": $geocodingResults2.results[0].country_code, \"timezone\": $geocodingResults2.results[0].timezone}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults1.results[0].name, 'first location name available for table') } }",
+        "${ function() { $test($geocodingResults2.results[0].name, 'second location name available for table') } }",
+        "${ function() { $test($geocodingResults1.results[0].latitude, 'first latitude available for table') } }",
+        "${ function() { $test($geocodingResults2.results[0].latitude, 'second latitude available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'first place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].place_name, 'second place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'first latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].latitude, 'second latitude field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze and present multiple geocoding results",
@@ -265,7 +352,14 @@ Here's an example plan that geocodes multiple locations:
       "type": "llm",
       "stream": true,
       "input": "${$multipleGeocodingTable}",
-      "query": "Based on the geocoding data provided, give me a comprehensive analysis of these locations. Include: 1) The exact coordinates for each location, 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about these locations and any notable differences."
+      "query": "Based on the geocoding data provided, give me a comprehensive analysis of these locations. Include: 1) The exact coordinates for each location, 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about these locations and any notable differences.",
+      "testInput": [
+        "${ function() { $test($multipleGeocodingTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($multipleGeocodingTable[0].place_name, 'first place_name field exists in llm input') } }",
+        "${ function() { $test($multipleGeocodingTable[1].place_name, 'second place_name field exists in llm input') } }",
+        "${ function() { $test($multipleGeocodingTable[0].latitude, 'first latitude field exists in llm input') } }",
+        "${ function() { $test($multipleGeocodingTable[1].latitude, 'second latitude field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -325,3 +419,239 @@ Here's an example plan that geocodes multiple locations:
 Emit your plan in a fenced `json` code block. The plan will autorun.
 
 Do not prompt the user to continue or confirm before executing the plan.
+
+## **Updated Example Plans with Tests for Geocoding:**
+
+### **1. Forward Geocoding Example (with tests):**
+
+```json
+{
+  "description": "Convert a place name to coordinates using forward geocoding",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the place name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Monaco",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].id, 'location id exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Display geocoding results in table format",
+      "type": "table",
+      "title": "Geocoding Results",
+      "stream": false,
+      "name": "geocodingTable",
+      "input": "${[{\"place_name\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"country_code\": $geocodingResults.results[0].country_code, \"timezone\": $geocodingResults.results[0].timezone}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].country_code, 'country code available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze and present geocoding results",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$geocodingTable}",
+      "query": "Based on the geocoding data provided, give me a comprehensive analysis of Monaco. Include: 1) The exact coordinates (latitude and longitude), 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about this location.",
+      "testInput": [
+        "${ function() { $test($geocodingTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($geocodingTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].longitude, 'longitude field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].country_code, 'country_code field exists in llm input') } }",
+        "${ function() { $test($geocodingTable[0].timezone, 'timezone field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. Reverse Geocoding Example (with tests):**
+
+```json
+{
+  "description": "Convert coordinates to place name using reverse geocoding",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Reverse geocode coordinates to get place name",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/reverse",
+      "params": {
+        "latitude": "35.6895",
+        "longitude": "139.6917",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "reverseGeocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.name, 'place name exists in reverse geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.country_code, 'country code exists in reverse geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.timezone, 'timezone exists in reverse geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Display reverse geocoding results in table format",
+      "type": "table",
+      "title": "Reverse Geocoding Results",
+      "stream": false,
+      "name": "reverseGeocodingTable",
+      "input": "${[{\"latitude\": \"35.6895\", \"longitude\": \"139.6917\", \"place_name\": $reverseGeocodingResults.name, \"country_code\": $reverseGeocodingResults.country_code, \"timezone\": $reverseGeocodingResults.timezone}]}",
+      "testInput": [
+        "${ function() { $test($reverseGeocodingResults.name, 'place name available for table') } }",
+        "${ function() { $test($reverseGeocodingResults.country_code, 'country code available for table') } }",
+        "${ function() { $test($reverseGeocodingResults.timezone, 'timezone available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze and present reverse geocoding results",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$reverseGeocodingTable}",
+      "query": "Based on the reverse geocoding data provided, give me a comprehensive analysis of this location. Include: 1) The exact place name and coordinates, 2) Location details and significance, 3) Timezone information and its implications, 4) How this location could be used for weather queries. Provide practical insights about this location.",
+      "testInput": [
+        "${ function() { $test($reverseGeocodingTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($reverseGeocodingTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].longitude, 'longitude field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].country_code, 'country_code field exists in llm input') } }",
+        "${ function() { $test($reverseGeocodingTable[0].timezone, 'timezone field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **3. Multiple Location Geocoding Example (with tests):**
+
+```json
+{
+  "description": "Geocode multiple place names to coordinates",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the first place name",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Paris",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults1",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Geocode the second place name",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Tokyo",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults2",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Display multiple geocoding results in table format",
+      "type": "table",
+      "title": "Multiple Geocoding Results",
+      "stream": false,
+      "name": "multipleGeocodingTable",
+      "input": "${[{\"place_name\": $geocodingResults1.results[0].name, \"latitude\": $geocodingResults1.results[0].latitude, \"longitude\": $geocodingResults1.results[0].longitude, \"country_code\": $geocodingResults1.results[0].country_code, \"timezone\": $geocodingResults1.results[0].timezone}, {\"place_name\": $geocodingResults2.results[0].name, \"latitude\": $geocodingResults2.results[0].latitude, \"longitude\": $geocodingResults2.results[0].longitude, \"country_code\": $geocodingResults2.results[0].country_code, \"timezone\": $geocodingResults2.results[0].timezone}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults1.results[0].name, 'first location name available for table') } }",
+        "${ function() { $test($geocodingResults2.results[0].name, 'second location name available for table') } }",
+        "${ function() { $test($geocodingResults1.results[0].latitude, 'first latitude available for table') } }",
+        "${ function() { $test($geocodingResults2.results[0].latitude, 'second latitude available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'first place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].place_name, 'second place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'first latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].latitude, 'second latitude field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze and present multiple geocoding results",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$multipleGeocodingTable}",
+      "query": "Based on the geocoding data provided, give me a comprehensive analysis of these locations. Include: 1) The exact coordinates for each location, 2) Location details and significance, 3) Timezone information and its implications, 4) How these coordinates could be used for weather queries. Provide practical insights about these locations and any notable differences.",
+      "testInput": [
+        "${ function() { $test($multipleGeocodingTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($multipleGeocodingTable[0].place_name, 'first place_name field exists in llm input') } }",
+        "${ function() { $test($multipleGeocodingTable[1].place_name, 'second place_name field exists in llm input') } }",
+        "${ function() { $test($multipleGeocodingTable[0].latitude, 'first latitude field exists in llm input') } }",
+        "${ function() { $test($multipleGeocodingTable[1].latitude, 'second latitude field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```

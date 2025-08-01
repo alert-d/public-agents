@@ -151,7 +151,13 @@ Here's an example plan that gets elevation data for a city:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get elevation data using the coordinates",
@@ -163,7 +169,15 @@ Here's an example plan that gets elevation data for a city:
         "longitude": "${$geocodingResults.results[0].longitude}"
       },
       "stream": true,
-      "name": "elevationData"
+      "name": "elevationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }"
+      ]
     },
     {
       "description": "Display elevation data in table format",
@@ -171,7 +185,21 @@ Here's an example plan that gets elevation data for a city:
       "title": "Elevation Data",
       "stream": false,
       "name": "elevationTable",
-      "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"elevation_meters\": $elevationData.elevation[0], \"elevation_feet\": $elevationData.elevation[0] * 3.28084}]}"
+      "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"elevation_meters\": $elevationData.elevation[0], \"elevation_feet\": $elevationData.elevation[0] * 3.28084}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($elevationData.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].location, 'location field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_meters, 'elevation_meters field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_feet, 'elevation_feet field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze elevation data and provide insights",
@@ -179,7 +207,13 @@ Here's an example plan that gets elevation data for a city:
       "type": "llm",
       "stream": true,
       "input": "${$elevationTable}",
-      "query": "Analyze the elevation data for this location. Provide insights about the terrain, altitude characteristics, and what this elevation means in practical terms. Include both metric and imperial measurements."
+      "query": "Analyze the elevation data for this location. Provide insights about the terrain, altitude characteristics, and what this elevation means in practical terms. Include both metric and imperial measurements.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].location, 'location field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation_meters, 'elevation_meters field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation_feet, 'elevation_feet field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -207,7 +241,13 @@ Here's an example plan that gets elevation data for multiple locations:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults1"
+      "name": "geocodingResults1",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get elevation data for the first location",
@@ -219,7 +259,15 @@ Here's an example plan that gets elevation data for multiple locations:
         "longitude": "${$geocodingResults1.results[0].longitude}"
       },
       "stream": true,
-      "name": "elevationData1"
+      "name": "elevationData1",
+      "testInput": [
+        "${ function() { $test($geocodingResults1.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults1.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }"
+      ]
     },
     {
       "description": "Display elevation comparison data in table format",
@@ -227,7 +275,21 @@ Here's an example plan that gets elevation data for multiple locations:
       "title": "Elevation Comparison",
       "stream": false,
       "name": "elevationComparisonTable",
-      "input": "${[{\"location\": $geocodingResults1.results[0].name, \"latitude\": $geocodingResults1.results[0].latitude, \"longitude\": $geocodingResults1.results[0].longitude, \"elevation_meters\": $elevationData1.elevation[0], \"elevation_feet\": $elevationData1.elevation[0] * 3.28084}]}"
+      "input": "${[{\"location\": $geocodingResults1.results[0].name, \"latitude\": $geocodingResults1.results[0].latitude, \"longitude\": $geocodingResults1.results[0].longitude, \"elevation_meters\": $elevationData1.elevation[0], \"elevation_feet\": $elevationData1.elevation[0] * 3.28084}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults1.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults1.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults1.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($elevationData1.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].location, 'location field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_meters, 'elevation_meters field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_feet, 'elevation_feet field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze elevation comparison data and provide insights",
@@ -235,7 +297,13 @@ Here's an example plan that gets elevation data for multiple locations:
       "type": "llm",
       "stream": true,
       "input": "${$elevationComparisonTable}",
-      "query": "Analyze the elevation data for these locations. Provide insights about the terrain characteristics, altitude differences, and what these elevations mean in practical terms. Include both metric and imperial measurements."
+      "query": "Analyze the elevation data for Mount Everest. Provide insights about this extreme elevation, its significance, and what makes this location unique. Include both metric and imperial measurements.",
+      "testInput": [
+        "${ function() { $test($elevationComparisonTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationComparisonTable[0].location, 'location field exists in llm input') } }",
+        "${ function() { $test($elevationComparisonTable[0].elevation_meters, 'elevation_meters field exists in llm input') } }",
+        "${ function() { $test($elevationComparisonTable[0].elevation_feet, 'elevation_feet field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -247,7 +315,7 @@ Here's an example plan that gets elevation data for multiple coordinates at once
 
 ```json
 {
-  "description": "Get elevation data for multiple coordinates in a single request",
+  "description": "Get elevation data for multiple coordinates at once",
   "type": "plan",
   "version": "v0.0.1",
   "serial": [
@@ -257,11 +325,19 @@ Here's an example plan that gets elevation data for multiple coordinates at once
       "method": "GET",
       "url": "https://api.open-meteo.com/v1/elevation",
       "params": {
-        "latitude": "52.52,48.85,40.7128",
-        "longitude": "13.41,2.35,-74.0060"
+        "latitude": "39.7392,40.7128,34.0522",
+        "longitude": "-104.9903,-74.0060,-118.2437"
       },
       "stream": true,
-      "name": "bulkElevationData"
+      "name": "bulkElevationData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'first elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[1], 'second elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[2], 'third elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.latitude, 'latitude array exists in elevation data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.longitude, 'longitude array exists in elevation data') } }"
+      ]
     },
     {
       "description": "Display bulk elevation data in table format",
@@ -269,7 +345,21 @@ Here's an example plan that gets elevation data for multiple coordinates at once
       "title": "Bulk Elevation Data",
       "stream": false,
       "name": "bulkElevationTable",
-      "input": "${$zip([\"Berlin\", \"Paris\", \"New York\"], [52.52, 48.85, 40.7128], [13.41, 2.35, -74.0060], $bulkElevationData.elevation) ~> $map(function($row) { {\"location\": $row[0], \"latitude\": $row[1], \"longitude\": $row[2], \"elevation_meters\": $row[3], \"elevation_feet\": $row[3] * 3.28084} })}"
+      "input": "${$zip($bulkElevationData.latitude, $bulkElevationData.longitude, $bulkElevationData.elevation) ~> $map(function($row) { {\"latitude\": $row[0], \"longitude\": $row[1], \"elevation_meters\": $row[2], \"elevation_feet\": $row[2] * 3.28084} })}",
+      "testInput": [
+        "${ function() { $test($bulkElevationData.latitude, 'latitude array available for table') } }",
+        "${ function() { $test($bulkElevationData.longitude, 'longitude array available for table') } }",
+        "${ function() { $test($bulkElevationData.elevation, 'elevation array available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_meters, 'elevation_meters field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_feet, 'elevation_feet field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].latitude, 'second row latitude exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].elevation_meters, 'second row elevation exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze bulk elevation data and provide insights",
@@ -277,7 +367,15 @@ Here's an example plan that gets elevation data for multiple coordinates at once
       "type": "llm",
       "stream": true,
       "input": "${$bulkElevationTable}",
-      "query": "Analyze the elevation data for these locations. Provide insights about the terrain characteristics, altitude differences, and what these elevations mean in practical terms. Include both metric and imperial measurements."
+      "query": "Based on the elevation data provided for multiple locations (Denver: 39.7392,-104.9903, New York: 40.7128,-74.0060, Los Angeles: 34.0522,-118.2437), give me a comprehensive analysis. Include: 1) Elevation comparisons between the locations, 2) Geographic significance of the elevation differences, 3) How elevation might impact climate, weather, or living conditions in each area, 4) Any notable patterns or insights from the data.",
+      "testInput": [
+        "${ function() { $test($bulkElevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($bulkElevationTable[0].latitude, 'first row latitude field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[0].elevation_meters, 'first row elevation_meters field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[0].elevation_feet, 'first row elevation_feet field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[1].latitude, 'second row latitude field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[1].elevation_meters, 'second row elevation_meters field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -330,3 +428,482 @@ Here's an example plan that gets elevation data for multiple coordinates at once
 Emit your plan in a fenced `json` code block. The plan will autorun.
 
 Do not prompt the user to continue or confirm before executing the plan.
+
+## **Updated Elevation Plans with Tests:**
+
+### **1. CityToElevation.json (Updated with tests):**
+
+```json
+{
+  "description": "Get elevation data for a city by first geocoding the city name to coordinates",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Denver, Colorado",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get elevation data using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}"
+      },
+      "stream": true,
+      "name": "elevationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }"
+      ]
+    },
+    {
+      "description": "Display elevation data in table format",
+      "type": "table",
+      "title": "Elevation Data",
+      "stream": false,
+      "name": "elevationTable",
+      "input": "${[{\"place_name\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"country_code\": $geocodingResults.results[0].country_code, \"timezone\": $geocodingResults.results[0].timezone, \"elevation\": $elevationData.elevation[0]}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].country_code, 'country code available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone available for table') } }",
+        "${ function() { $test($elevationData.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation, 'elevation field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationTable}",
+      "query": "Based on the elevation data provided for ${$elevationTable[0].place_name}, give me a detailed analysis. Include: 1) The exact elevation in meters, 2) The significance of this elevation, 3) How this elevation might impact weather or living conditions in this location, 4) Geographic context and timezone implications.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation, 'elevation field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].longitude, 'longitude field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. SingleElevationQuery.json (Updated with tests):**
+
+```json
+{
+  "description": "Query elevation data for a single coordinate pair",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get elevation data for the specified coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "39.7392",
+        "longitude": "-104.9903"
+      },
+      "stream": true,
+      "name": "elevationData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.latitude, 'latitude exists in elevation data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.longitude, 'longitude exists in elevation data') } }"
+      ]
+    },
+    {
+      "description": "Display elevation data in table format",
+      "type": "table",
+      "title": "Elevation Data",
+      "stream": false,
+      "name": "elevationTable",
+      "input": "${[{\"latitude\": $elevationData.latitude[0], \"longitude\": $elevationData.longitude[0], \"elevation\": $elevationData.elevation[0]}]}",
+      "testInput": [
+        "${ function() { $test($elevationData.latitude[0], 'latitude available for table') } }",
+        "${ function() { $test($elevationData.longitude[0], 'longitude available for table') } }",
+        "${ function() { $test($elevationData.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation, 'elevation field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationTable}",
+      "query": "Based on the elevation data provided for coordinates 39.7392, -104.9903 (Denver, Colorado), give me a detailed analysis. Include: 1) The exact elevation in meters, 2) The significance of this elevation, 3) How this elevation might impact the local environment or climate.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].longitude, 'longitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation, 'elevation field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **3. BulkElevationQuery.json (Updated with tests):**
+
+```json
+{
+  "description": "Query elevation data for multiple coordinate pairs (up to 100 coordinates)",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get elevation data for multiple coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "39.7392,40.7128,34.0522",
+        "longitude": "-104.9903,-74.0060,-118.2437"
+      },
+      "stream": true,
+      "name": "elevationData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'first elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[1], 'second elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[2], 'third elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.latitude, 'latitude array exists in elevation data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.longitude, 'longitude array exists in elevation data') } }"
+      ]
+    },
+    {
+      "description": "Display bulk elevation data in table format",
+      "type": "table",
+      "title": "Bulk Elevation Data",
+      "stream": false,
+      "name": "elevationTable",
+      "input": "${$zip($elevationData.latitude, $elevationData.longitude, $elevationData.elevation) ~> $map(function($row) { {\"latitude\": $row[0], \"longitude\": $row[1], \"elevation\": $row[2]} })}",
+      "testInput": [
+        "${ function() { $test($elevationData.latitude, 'latitude array available for table') } }",
+        "${ function() { $test($elevationData.longitude, 'longitude array available for table') } }",
+        "${ function() { $test($elevationData.elevation, 'elevation array available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation, 'elevation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].latitude, 'second row latitude exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].longitude, 'second row longitude exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].elevation, 'second row elevation exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze bulk elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationTable}",
+      "query": "Based on the elevation data provided for multiple locations (Denver: 39.7392,-104.9903, New York: 40.7128,-74.0060, Los Angeles: 34.0522,-118.2437), give me a comprehensive analysis. Include: 1) Elevation comparisons between the locations, 2) Geographic significance of the elevation differences, 3) How elevation might impact climate, weather, or living conditions in each area, 4) Any notable patterns or insights from the data.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].latitude, 'first row latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].longitude, 'first row longitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation, 'first row elevation field exists in llm input') } }",
+        "${ function() { $test($elevationTable[1].latitude, 'second row latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[1].elevation, 'second row elevation field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+Now let me provide the updated example plans for the elevation prompt.md:
+
+## **Updated Example Plans for Elevation prompt.md:**
+
+### **1. City to Elevation Example (with tests):**
+
+```json
+{
+  "description": "Convert a city name to coordinates and get elevation data",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Denver",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get elevation data using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}"
+      },
+      "stream": true,
+      "name": "elevationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }"
+      ]
+    },
+    {
+      "description": "Display elevation data in table format",
+      "type": "table",
+      "title": "Elevation Data",
+      "stream": false,
+      "name": "elevationTable",
+      "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"elevation_meters\": $elevationData.elevation[0], \"elevation_feet\": $elevationData.elevation[0] * 3.28084}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($elevationData.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].location, 'location field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_meters, 'elevation_meters field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_feet, 'elevation_feet field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationTable}",
+      "query": "Analyze the elevation data for this location. Provide insights about the terrain, altitude characteristics, and what this elevation means in practical terms. Include both metric and imperial measurements.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].location, 'location field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation_meters, 'elevation_meters field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation_feet, 'elevation_feet field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. Multiple Locations Elevation Example (with tests):**
+
+```json
+{
+  "description": "Get elevation data for multiple cities",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode multiple city names to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Mount Everest",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults1",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get elevation data for the first location",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "${$geocodingResults1.results[0].latitude}",
+        "longitude": "${$geocodingResults1.results[0].longitude}"
+      },
+      "stream": true,
+      "name": "elevationData1",
+      "testInput": [
+        "${ function() { $test($geocodingResults1.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults1.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }"
+      ]
+    },
+    {
+      "description": "Display elevation comparison data in table format",
+      "type": "table",
+      "title": "Elevation Comparison",
+      "stream": false,
+      "name": "elevationComparisonTable",
+      "input": "${[{\"location\": $geocodingResults1.results[0].name, \"latitude\": $geocodingResults1.results[0].latitude, \"longitude\": $geocodingResults1.results[0].longitude, \"elevation_meters\": $elevationData1.elevation[0], \"elevation_feet\": $elevationData1.elevation[0] * 3.28084}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults1.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults1.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults1.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($elevationData1.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].location, 'location field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_meters, 'elevation_meters field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_feet, 'elevation_feet field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze elevation comparison data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationComparisonTable}",
+      "query": "Analyze the elevation data for Mount Everest. Provide insights about this extreme elevation, its significance, and what makes this location unique. Include both metric and imperial measurements.",
+      "testInput": [
+        "${ function() { $test($elevationComparisonTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationComparisonTable[0].location, 'location field exists in llm input') } }",
+        "${ function() { $test($elevationComparisonTable[0].elevation_meters, 'elevation_meters field exists in llm input') } }",
+        "${ function() { $test($elevationComparisonTable[0].elevation_feet, 'elevation_feet field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **3. Bulk Elevation Query Example (with tests):**
+
+```json
+{
+  "description": "Get elevation data for multiple coordinates at once",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get elevation data for multiple coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "39.7392,40.7128,34.0522",
+        "longitude": "-104.9903,-74.0060,-118.2437"
+      },
+      "stream": true,
+      "name": "bulkElevationData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'first elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[1], 'second elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[2], 'third elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.latitude, 'latitude array exists in elevation data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.longitude, 'longitude array exists in elevation data') } }"
+      ]
+    },
+    {
+      "description": "Display bulk elevation data in table format",
+      "type": "table",
+      "title": "Bulk Elevation Data",
+      "stream": false,
+      "name": "bulkElevationTable",
+      "input": "${$zip($bulkElevationData.latitude, $bulkElevationData.longitude, $bulkElevationData.elevation) ~> $map(function($row) { {\"latitude\": $row[0], \"longitude\": $row[1], \"elevation_meters\": $row[2], \"elevation_feet\": $row[2] * 3.28084} })}",
+      "testInput": [
+        "${ function() { $test($bulkElevationData.latitude, 'latitude array available for table') } }",
+        "${ function() { $test($bulkElevationData.longitude, 'longitude array available for table') } }",
+        "${ function() { $test($bulkElevationData.elevation, 'elevation array available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_meters, 'elevation_meters field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation_feet, 'elevation_feet field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].latitude, 'second row latitude exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].elevation_meters, 'second row elevation exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze bulk elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$bulkElevationTable}",
+      "query": "Based on the elevation data provided for multiple locations (Denver: 39.7392,-104.9903, New York: 40.7128,-74.0060, Los Angeles: 34.0522,-118.2437), give me a comprehensive analysis. Include: 1) Elevation comparisons between the locations, 2) Geographic significance of the elevation differences, 3) How elevation might impact climate, weather, or living conditions in each area, 4) Any notable patterns or insights from the data.",
+      "testInput": [
+        "${ function() { $test($bulkElevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($bulkElevationTable[0].latitude, 'first row latitude field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[0].elevation_meters, 'first row elevation_meters field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[0].elevation_feet, 'first row elevation_feet field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[1].latitude, 'second row latitude field exists in llm input') } }",
+        "${ function() { $test($bulkElevationTable[1].elevation_meters, 'second row elevation_meters field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```

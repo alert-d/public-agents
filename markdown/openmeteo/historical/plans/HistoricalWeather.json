@@ -1,54 +1,97 @@
 {
-    "description": "Convert a city name to coordinates and get historical weather data for analysis",
-    "type": "plan",
-    "version": "v0.0.1",
-    "agent": "openmeteo/historical",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "New York",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get historical weather data for the specified period",
-            "type": "restful",
-            "method": "GET",
-            "url": "https://archive-api.open-meteo.com/v1/archive",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "start_date": "2023-01-01",
-                "end_date": "2023-12-31",
-                "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
-                "timezone": "${$geocodingResults.results[0].timezone}"
-            },
-            "stream": true,
-            "name": "historicalData"
-        },
-        {
-            "description": "Display daily historical weather data in table format",
-            "type": "table",
-            "title": "Daily Historical Weather Data",
-            "stream": false,
-            "name": "historicalTable",
-            "input": "${$zip($historicalData.daily.time, $historicalData.daily.temperature_2m_max, $historicalData.daily.temperature_2m_min, $historicalData.daily.precipitation_sum, $historicalData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}"
-        },
-        {
-            "description": "Analyze historical weather data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$historicalTable}",
-            "query": "Analyze the historical weather data for ${$transformHistorical.location} during ${$transformHistorical.period}. Key statistics: Max temp: ${$transformHistorical.max_temperature}°C, Min temp: ${$transformHistorical.min_temperature}°C, Average temp: ${$transformHistorical.avg_temperature}°C, Total precipitation: ${$transformHistorical.total_precipitation}mm over ${$transformHistorical.data_points} days. Provide insights about: 1) Temperature patterns and extremes, 2) Precipitation trends, 3) Seasonal variations, 4) Notable weather events. Include specific data points, averages, and practical observations about the weather patterns."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get historical weather data for analysis",
+  "type": "plan",
+  "version": "v0.0.1",
+  "agent": "openmeteo/historical",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "New York",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get historical weather data for the specified period",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://archive-api.open-meteo.com/v1/archive",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "start_date": "2023-01-01",
+        "end_date": "2023-12-31",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "historicalData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily historical data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_max, 'daily max temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_min, 'daily min temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.precipitation_sum, 'daily precipitation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.weather_code, 'daily weather code data exists') } }"
+      ]
+    },
+    {
+      "description": "Display daily historical weather data in table format",
+      "type": "table",
+      "title": "Daily Historical Weather Data",
+      "stream": false,
+      "name": "historicalTable",
+      "input": "${$zip($historicalData.daily.time, $historicalData.daily.temperature_2m_max, $historicalData.daily.temperature_2m_min, $historicalData.daily.precipitation_sum, $historicalData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}",
+      "testInput": [
+        "${ function() { $test($historicalData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($historicalData.daily.temperature_2m_max, 'daily max temperature data available for table') } }",
+        "${ function() { $test($historicalData.daily.temperature_2m_min, 'daily min temperature data available for table') } }",
+        "${ function() { $test($historicalData.daily.precipitation_sum, 'daily precipitation data available for table') } }",
+        "${ function() { $test($historicalData.daily.weather_code, 'daily weather code data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_max, 'temperature_2m_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_min, 'temperature_2m_min field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].precipitation_sum, 'precipitation_sum field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].weather_code, 'weather_code field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze historical weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$historicalTable}",
+      "query": "Analyze the historical weather data for ${$transformHistorical.location} during ${$transformHistorical.period}. Key statistics: Max temp: ${$transformHistorical.max_temperature}°C, Min temp: ${$transformHistorical.min_temperature}°C, Average temp: ${$transformHistorical.avg_temperature}°C, Total precipitation: ${$transformHistorical.total_precipitation}mm over ${$transformHistorical.data_points} days. Provide insights about: 1) Temperature patterns and extremes, 2) Precipitation trends, 3) Seasonal variations, 4) Notable weather events. Include specific data points, averages, and practical observations about the weather patterns.",
+      "testInput": [
+        "${ function() { $test($historicalTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($historicalTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($historicalTable[0].temperature_2m_max, 'temperature_2m_max field exists in llm input') } }",
+        "${ function() { $test($historicalTable[0].temperature_2m_min, 'temperature_2m_min field exists in llm input') } }",
+        "${ function() { $test($historicalTable[0].precipitation_sum, 'precipitation_sum field exists in llm input') } }",
+        "${ function() { $test($historicalTable[0].weather_code, 'weather_code field exists in llm input') } }"
+      ]
+    }
+  ]
 }

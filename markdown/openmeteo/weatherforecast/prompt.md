@@ -170,7 +170,13 @@ Here's an example plan that gets weather forecast for a city:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get weather forecast using the coordinates",
@@ -186,7 +192,20 @@ Here's an example plan that gets weather forecast for a city:
         "timezone": "${$geocodingResults.results[0].timezone}"
       },
       "stream": true,
-      "name": "weatherData"
+      "name": "weatherData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily weather data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_max, 'daily max temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_min, 'daily min temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.precipitation_sum, 'daily precipitation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.weather_code, 'daily weather code data exists') } }"
+      ]
     },
     {
       "description": "Display 7-day weather forecast in table format",
@@ -194,7 +213,22 @@ Here's an example plan that gets weather forecast for a city:
       "title": "7-Day Weather Forecast",
       "stream": false,
       "name": "forecastTable",
-      "input": "${$zip($weatherData.daily.time, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.precipitation_sum, $weatherData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}"
+      "input": "${$zip($weatherData.daily.time, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.precipitation_sum, $weatherData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}",
+      "testInput": [
+        "${ function() { $test($weatherData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_max, 'daily max temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_min, 'daily min temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.precipitation_sum, 'daily precipitation data available for table') } }",
+        "${ function() { $test($weatherData.daily.weather_code, 'daily weather code data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_max, 'max temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_min, 'min temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].precipitation_sum, 'precipitation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].weather_code, 'weather code field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze weather data and provide insights",
@@ -202,7 +236,15 @@ Here's an example plan that gets weather forecast for a city:
       "type": "llm",
       "stream": true,
       "input": "${$forecastTable}",
-      "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response."
+      "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response.",
+      "testInput": [
+        "${ function() { $test($forecastTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($forecastTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].temperature_2m_max, 'max temperature field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].temperature_2m_min, 'min temperature field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].precipitation_sum, 'precipitation field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].weather_code, 'weather code field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -394,3 +436,349 @@ Here's an example plan that gets detailed weather analysis for a location:
 Emit your plan in a fenced `json` code block. The plan will autorun.
 
 Do not prompt the user to continue or confirm before executing the plan.
+
+## **Updated WeatherForecast Plans with Tests:**
+
+### **1. CityToWeatherForecast.json (Updated with tests):**
+
+```json
+{
+  "description": "Convert a city name to coordinates and get a 7-day weather forecast with basic table display and LLM analysis.",
+  "type": "plan",
+  "version": "v0.0.5",
+  "agent": "openmeteo/weatherforecast",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Paris",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get weather forecast using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/forecast",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+        "hourly": "temperature_2m,precipitation,weather_code,wind_speed_10m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "weatherData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily weather data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_max, 'daily max temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_min, 'daily min temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.precipitation_sum, 'daily precipitation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.weather_code, 'daily weather code data exists') } }"
+      ]
+    },
+    {
+      "description": "Display 7-day weather forecast in table format",
+      "type": "table",
+      "title": "7-Day Weather Forecast",
+      "stream": false,
+      "name": "forecastTable",
+      "input": "${$zip($weatherData.daily.precipitation_sum, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.time, $weatherData.daily.weather_code) ~> $map(function($row) { {'date': $row[3], 'precipitation_sum': $row[0], 'temperature_2m_max': $row[1], 'temperature_2m_min': $row[2], 'weather_code': $row[4]} })}",
+      "testInput": [
+        "${ function() { $test($weatherData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_max, 'daily max temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_min, 'daily min temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.precipitation_sum, 'daily precipitation data available for table') } }",
+        "${ function() { $test($weatherData.daily.weather_code, 'daily weather code data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_max, 'max temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_min, 'min temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].precipitation_sum, 'precipitation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].weather_code, 'weather code field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$forecastTable}",
+      "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response.",
+      "testInput": [
+        "${ function() { $test($forecastTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($forecastTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].temperature_2m_max, 'max temperature field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].temperature_2m_min, 'min temperature field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].precipitation_sum, 'precipitation field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].weather_code, 'weather code field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. IntelligentWeatherQuery.json (Updated with tests):**
+
+```json
+{
+  "description": "Intelligent weather query system that parses user intent and provides targeted weather information",
+  "type": "plan",
+  "version": "v0.0.6",
+  "agent": "openmeteo/weatherforecast",
+  "serial": [
+    {
+      "name": "parseIntent",
+      "type": "llm",
+      "description": "Parse the user's weather query to extract city, weather variable, and time period",
+      "model": "gpt-4",
+      "stream": false,
+      "query": "Parse this weather query: '${$userQuery}'. Return a JSON object with: city (string), variable (temperature/rain/wind/humidity/precipitation), days (number), and focus (current/forecast/daily). Example: 'Paris rain for 3 days' should return {'city': 'Paris', 'variable': 'precipitation', 'days': 3, 'focus': 'forecast'}. If no specific days mentioned, default to 7. If no specific variable mentioned, default to 'temperature'.",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.city, 'city field exists in parsed intent') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.variable, 'variable field exists in parsed intent') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.days, 'days field exists in parsed intent') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.focus, 'focus field exists in parsed intent') } }"
+      ]
+    },
+    {
+      "description": "Geocode the parsed city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "${$parseIntent.city}",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testInput": [
+        "${ function() { $test($parseIntent.city, 'city from parsed intent available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get weather forecast using the coordinates and parsed parameters",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/forecast",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "select": [
+          "current.temperature_2m",
+          "current.relative_humidity_2m",
+          "current.apparent_temperature",
+          "current.precipitation",
+          "current.weather_code",
+          "current.wind_speed_10m",
+          "hourly.temperature_2m",
+          "hourly.precipitation",
+          "hourly.weather_code",
+          "hourly.wind_speed_10m",
+          "hourly.relative_humidity_2m",
+          "daily.temperature_2m_max",
+          "daily.temperature_2m_min",
+          "daily.precipitation_sum",
+          "daily.weather_code"
+        ],
+        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+        "hourly": "temperature_2m,precipitation,weather_code,wind_speed_10m,relative_humidity_2m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "forecast_days": "${$parseIntent.days}",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "weatherData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($parseIntent.days, 'days from parsed intent available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily weather data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_max, 'daily max temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_min, 'daily min temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.precipitation_sum, 'daily precipitation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.weather_code, 'daily weather code data exists') } }"
+      ]
+    },
+    {
+      "description": "Display daily max temperatures in table format",
+      "type": "table",
+      "title": "Daily Max Temperatures",
+      "stream": false,
+      "name": "weatherTable",
+      "input": "${$zip($weatherData.daily.time, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.precipitation_sum, $weatherData.daily.weather_code) ~> $map(function($row) { {\"Date\": $row[0], \"Max Temp (°C)\": $row[1], \"Min Temp (°C)\": $row[2], \"Precipitation (mm)\": $row[3], \"Weather Code\": $row[4]} })}",
+      "testInput": [
+        "${ function() { $test($weatherData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_max, 'daily max temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_min, 'daily min temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.precipitation_sum, 'daily precipitation data available for table') } }",
+        "${ function() { $test($weatherData.daily.weather_code, 'daily weather code data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].Date, 'Date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0]['Max Temp (°C)'], 'Max Temp field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0]['Min Temp (°C)'], 'Min Temp field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0]['Precipitation (mm)'], 'Precipitation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0]['Weather Code'], 'Weather Code field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Provide intelligent weather analysis based on the user's specific query",
+      "type": "llm",
+      "model": "gpt-4",
+      "stream": true,
+      "input": "${$weatherTable}",
+      "query": "Analyze the weather data for ${$parseIntent.city} based on the user's query: '${$userQuery}'. Focus on ${$parseIntent.variable} for the next ${$parseIntent.days} days. Provide specific insights about the requested weather variable, practical recommendations, and format the relevant data in a readable way. If the user asked about rain/precipitation, focus on precipitation patterns. If they asked about temperature, focus on temperature trends. If they asked about wind, focus on wind conditions.",
+      "testInput": [
+        "${ function() { $test($weatherTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($weatherTable[0].Date, 'Date field exists in llm input') } }",
+        "${ function() { $test($weatherTable[0]['Max Temp (°C)'], 'Max Temp field exists in llm input') } }",
+        "${ function() { $test($weatherTable[0]['Min Temp (°C)'], 'Min Temp field exists in llm input') } }",
+        "${ function() { $test($parseIntent.city, 'city from parsed intent available for query') } }",
+        "${ function() { $test($parseIntent.variable, 'variable from parsed intent available for query') } }",
+        "${ function() { $test($parseIntent.days, 'days from parsed intent available for query') } }"
+      ]
+    }
+  ]
+}
+```
+
+Now let me provide the updated example plans for the weatherforecast prompt.md:
+
+## **Updated Example Plans for WeatherForecast prompt.md:**
+
+### **1. City to Weather Forecast Example (with tests):**
+
+```json
+{
+  "description": "Convert a city name to coordinates and get a 7-day weather forecast with table display and LLM analysis.",
+  "type": "plan",
+  "version": "v0.0.5",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Paris",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get weather forecast using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/forecast",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "weatherData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily weather data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_max, 'daily max temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.temperature_2m_min, 'daily min temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.precipitation_sum, 'daily precipitation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.weather_code, 'daily weather code data exists') } }"
+      ]
+    },
+    {
+      "description": "Display 7-day weather forecast in table format",
+      "type": "table",
+      "title": "7-Day Weather Forecast",
+      "stream": false,
+      "name": "forecastTable",
+      "input": "${$zip($weatherData.daily.time, $weatherData.daily.temperature_2m_max, $weatherData.daily.temperature_2m_min, $weatherData.daily.precipitation_sum, $weatherData.daily.weather_code) ~> $map(function($row) { {\"date\": $row[0], \"temperature_2m_max\": $row[1], \"temperature_2m_min\": $row[2], \"precipitation_sum\": $row[3], \"weather_code\": $row[4]} })}",
+      "testInput": [
+        "${ function() { $test($weatherData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_max, 'daily max temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.temperature_2m_min, 'daily min temperature data available for table') } }",
+        "${ function() { $test($weatherData.daily.precipitation_sum, 'daily precipitation data available for table') } }",
+        "${ function() { $test($weatherData.daily.weather_code, 'daily weather code data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_max, 'max temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].temperature_2m_min, 'min temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].precipitation_sum, 'precipitation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].weather_code, 'weather code field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$forecastTable}",
+      "query": "Analyze the weather forecast data for this location. Provide insights about current conditions and upcoming weather patterns. Include practical recommendations based on the forecast. Format the daily data in a readable table format in your response.",
+      "testInput": [
+        "${ function() { $test($forecastTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($forecastTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].temperature_2m_max, 'max temperature field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].temperature_2m_min, 'min temperature field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].precipitation_sum, 'precipitation field exists in llm input') } }",
+        "${ function() { $test($forecastTable[0].weather_code, 'weather code field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```

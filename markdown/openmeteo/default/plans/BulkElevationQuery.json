@@ -1,35 +1,65 @@
 {
-    "description": "Query elevation data for multiple coordinate pairs (up to 100 coordinates)",
-    "type": "plan",
-    "version": "v0.0.1",
-    "serial": [
-        {
-            "description": "Get elevation data for multiple coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://api.open-meteo.com/v1/elevation",
-            "params": {
-                "latitude": "39.7392,40.7128,34.0522",
-                "longitude": "-104.9903,-74.0060,-118.2437"
-            },
-            "stream": true,
-            "name": "elevationData"
-        },
-        {
-            "description": "Display bulk elevation data in table format",
-            "type": "table",
-            "title": "Bulk Elevation Data",
-            "stream": false,
-            "name": "elevationTable",
-            "input": "${$zip($elevationData.latitude, $elevationData.longitude, $elevationData.elevation) ~> $map(function($row) { {\"latitude\": $row[0], \"longitude\": $row[1], \"elevation\": $row[2]} })}"
-        },
-        {
-            "description": "Analyze bulk elevation data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$elevationTable}",
-            "query": "Based on the elevation data provided for multiple locations (Denver: 39.7392,-104.9903, New York: 40.7128,-74.0060, Los Angeles: 34.0522,-118.2437), give me a comprehensive analysis. Include: 1) Elevation comparisons between the locations, 2) Geographic significance of the elevation differences, 3) How elevation might impact climate, weather, or living conditions in each area, 4) Any notable patterns or insights from the data."
-        }
-    ]
+  "description": "Query elevation data for multiple coordinate pairs (up to 100 coordinates)",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get elevation data for multiple coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "39.7392,40.7128,34.0522",
+        "longitude": "-104.9903,-74.0060,-118.2437"
+      },
+      "stream": true,
+      "name": "elevationData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'first elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[1], 'second elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[2], 'third elevation value exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.latitude, 'latitude array exists in elevation data') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.longitude, 'longitude array exists in elevation data') } }"
+      ]
+    },
+    {
+      "description": "Display bulk elevation data in table format",
+      "type": "table",
+      "title": "Bulk Elevation Data",
+      "stream": false,
+      "name": "elevationTable",
+      "input": "${$zip($elevationData.latitude, $elevationData.longitude, $elevationData.elevation) ~> $map(function($row) { {\"latitude\": $row[0], \"longitude\": $row[1], \"elevation\": $row[2]} })}",
+      "testInput": [
+        "${ function() { $test($elevationData.latitude, 'latitude array available for table') } }",
+        "${ function() { $test($elevationData.longitude, 'longitude array available for table') } }",
+        "${ function() { $test($elevationData.elevation, 'elevation array available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation, 'elevation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].latitude, 'second row latitude exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].longitude, 'second row longitude exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[1].elevation, 'second row elevation exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze bulk elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationTable}",
+      "query": "Based on the elevation data provided for multiple locations (Denver: 39.7392,-104.9903, New York: 40.7128,-74.0060, Los Angeles: 34.0522,-118.2437), give me a comprehensive analysis. Include: 1) Elevation comparisons between the locations, 2) Geographic significance of the elevation differences, 3) How elevation might impact climate, weather, or living conditions in each area, 4) Any notable patterns or insights from the data.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].latitude, 'first row latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].longitude, 'first row longitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation, 'first row elevation field exists in llm input') } }",
+        "${ function() { $test($elevationTable[1].latitude, 'second row latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[1].elevation, 'second row elevation field exists in llm input') } }"
+      ]
+    }
+  ]
 }

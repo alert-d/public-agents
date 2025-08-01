@@ -1,49 +1,89 @@
 {
-    "description": "Get elevation data for a city by first geocoding the city name to coordinates",
-    "type": "plan",
-    "version": "v0.0.1",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Denver, Colorado",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get elevation data using the coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://api.open-meteo.com/v1/elevation",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}"
-            },
-            "stream": true,
-            "name": "elevationData"
-        },
-        {
-            "description": "Display elevation data in table format",
-            "type": "table",
-            "title": "Elevation Data",
-            "stream": false,
-            "name": "elevationTable",
-            "input": "${[{\"place_name\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"country_code\": $geocodingResults.results[0].country_code, \"timezone\": $geocodingResults.results[0].timezone, \"elevation\": $elevationData.elevation[0]}]}"
-        },
-        {
-            "description": "Analyze elevation data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$elevationTable}",
-            "query": "Based on the elevation data provided for ${$elevationTable[0].place_name}, give me a detailed analysis. Include: 1) The exact elevation in meters, 2) The significance of this elevation, 3) How this elevation might impact weather or living conditions in this location, 4) Geographic context and timezone implications."
-        }
-    ]
+  "description": "Get elevation data for a city by first geocoding the city name to coordinates",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Denver, Colorado",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].country_code, 'country code exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get elevation data using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}"
+      },
+      "stream": true,
+      "name": "elevationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.elevation, 'elevation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.elevation[0], 'elevation value exists') } }"
+      ]
+    },
+    {
+      "description": "Display elevation data in table format",
+      "type": "table",
+      "title": "Elevation Data",
+      "stream": false,
+      "name": "elevationTable",
+      "input": "${[{\"place_name\": $geocodingResults.results[0].name, \"latitude\": $geocodingResults.results[0].latitude, \"longitude\": $geocodingResults.results[0].longitude, \"country_code\": $geocodingResults.results[0].country_code, \"timezone\": $geocodingResults.results[0].timezone, \"elevation\": $elevationData.elevation[0]}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].country_code, 'country code available for table') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone available for table') } }",
+        "${ function() { $test($elevationData.elevation[0], 'elevation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].place_name, 'place_name field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].latitude, 'latitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].longitude, 'longitude field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].country_code, 'country_code field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].timezone, 'timezone field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].elevation, 'elevation field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze elevation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$elevationTable}",
+      "query": "Based on the elevation data provided for ${$elevationTable[0].place_name}, give me a detailed analysis. Include: 1) The exact elevation in meters, 2) The significance of this elevation, 3) How this elevation might impact weather or living conditions in this location, 4) Geographic context and timezone implications.",
+      "testInput": [
+        "${ function() { $test($elevationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($elevationTable[0].place_name, 'place_name field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].elevation, 'elevation field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].latitude, 'latitude field exists in llm input') } }",
+        "${ function() { $test($elevationTable[0].longitude, 'longitude field exists in llm input') } }"
+      ]
+    }
+  ]
 }

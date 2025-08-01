@@ -173,7 +173,14 @@ Here's an example plan that gets flood data for a city:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get flood data using the coordinates",
@@ -188,7 +195,19 @@ Here's an example plan that gets flood data for a city:
         "timezone": "${$geocodingResults.results[0].timezone}"
       },
       "stream": true,
-      "name": "floodData"
+      "name": "floodData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_mean, 'daily river discharge mean data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_max, 'daily river discharge max data exists') } }"
+      ]
     },
     {
       "description": "Display flood data in table format",
@@ -196,7 +215,20 @@ Here's an example plan that gets flood data for a city:
       "title": "Flood Risk Assessment",
       "stream": false,
       "name": "floodTable",
-      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge, $floodData.daily.river_discharge_mean, $floodData.daily.river_discharge_max) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3]} })}"
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge, $floodData.daily.river_discharge_mean, $floodData.daily.river_discharge_max) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_mean, 'daily river discharge mean data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_max, 'daily river discharge max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_mean, 'river_discharge_mean field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_max, 'river_discharge_max field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze flood data and provide insights",
@@ -204,7 +236,14 @@ Here's an example plan that gets flood data for a city:
       "type": "llm",
       "stream": true,
       "input": "${$floodTable}",
-      "query": "Analyze the flood data for this location. Provide insights about river discharge patterns, flood risk assessment, and any notable trends. Include practical recommendations for flood preparedness."
+      "query": "Analyze the flood data for this location. Provide insights about river discharge patterns, flood risk assessment, and any notable trends. Include practical recommendations for flood preparedness.",
+      "testInput": [
+        "${ function() { $test($floodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($floodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge, 'river_discharge field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge_mean, 'river_discharge_mean field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge_max, 'river_discharge_max field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -232,7 +271,14 @@ Here's an example plan that gets historical flood data for analysis:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get historical flood data for the specified period",
@@ -248,7 +294,21 @@ Here's an example plan that gets historical flood data for analysis:
         "timezone": "${$geocodingResults.results[0].timezone}"
       },
       "stream": true,
-      "name": "historicalFloodData"
+      "name": "historicalFloodData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_mean, 'daily river discharge mean data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_max, 'daily river discharge max data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_p25, 'daily river discharge p25 data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_p75, 'daily river discharge p75 data exists') } }"
+      ]
     },
     {
       "description": "Display historical flood data in table format",
@@ -256,7 +316,24 @@ Here's an example plan that gets historical flood data for analysis:
       "title": "Historical Flood Data",
       "stream": false,
       "name": "historicalFloodTable",
-      "input": "${$zip($historicalFloodData.daily.time, $historicalFloodData.daily.river_discharge, $historicalFloodData.daily.river_discharge_mean, $historicalFloodData.daily.river_discharge_max, $historicalFloodData.daily.river_discharge_p25, $historicalFloodData.daily.river_discharge_p75) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3], \"river_discharge_p25\": $row[4], \"river_discharge_p75\": $row[5]} })}"
+      "input": "${$zip($historicalFloodData.daily.time, $historicalFloodData.daily.river_discharge, $historicalFloodData.daily.river_discharge_mean, $historicalFloodData.daily.river_discharge_max, $historicalFloodData.daily.river_discharge_p25, $historicalFloodData.daily.river_discharge_p75) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3], \"river_discharge_p25\": $row[4], \"river_discharge_p75\": $row[5]} })}",
+      "testInput": [
+        "${ function() { $test($historicalFloodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge, 'daily river discharge data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_mean, 'daily river discharge mean data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_max, 'daily river discharge max data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_p25, 'daily river discharge p25 data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_p75, 'daily river discharge p75 data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_mean, 'river_discharge_mean field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_max, 'river_discharge_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_p25, 'river_discharge_p25 field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_p75, 'river_discharge_p75 field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze historical flood data and provide insights",
@@ -264,7 +341,14 @@ Here's an example plan that gets historical flood data for analysis:
       "type": "llm",
       "stream": true,
       "input": "${$historicalFloodTable}",
-      "query": "Analyze the historical flood data for this location. The data contains daily river discharge values including mean, max, and percentile data. Provide insights about: 1) Seasonal flood patterns, 2) Peak discharge periods, 3) Flood risk assessment, 4) Historical trends. Include specific data points and practical observations about flood patterns."
+      "query": "Analyze the historical flood data for this location. Provide insights about river discharge patterns, historical trends, and flood risk assessment. Include practical recommendations for flood preparedness based on historical data.",
+      "testInput": [
+        "${ function() { $test($historicalFloodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($historicalFloodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($historicalFloodTable[0].river_discharge, 'river_discharge field exists in llm input') } }",
+        "${ function() { $test($historicalFloodTable[0].river_discharge_mean, 'river_discharge_mean field exists in llm input') } }",
+        "${ function() { $test($historicalFloodTable[0].river_discharge_max, 'river_discharge_max field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -281,7 +365,7 @@ Here's an example plan that gets flood data for specific coordinates:
   "version": "v0.0.1",
   "serial": [
     {
-      "description": "Get flood data for specific coordinates",
+      "description": "Get flood data for the specified coordinates",
       "type": "restful",
       "method": "GET",
       "url": "https://flood-api.open-meteo.com/v1/flood",
@@ -289,18 +373,38 @@ Here's an example plan that gets flood data for specific coordinates:
         "latitude": "59.91",
         "longitude": "10.75",
         "daily": "river_discharge,river_discharge_mean,river_discharge_max",
-        "forecast_days": "30"
+        "forecast_days": "7"
       },
       "stream": true,
-      "name": "floodData"
+      "name": "floodData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_mean, 'daily river discharge mean data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_max, 'daily river discharge max data exists') } }"
+      ]
     },
     {
       "description": "Display flood data in table format",
       "type": "table",
-      "title": "Flood Data for Coordinates",
+      "title": "Flood Data",
       "stream": false,
       "name": "floodTable",
-      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge, $floodData.daily.river_discharge_mean, $floodData.daily.river_discharge_max) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3]} })}"
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge, $floodData.daily.river_discharge_mean, $floodData.daily.river_discharge_max) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_mean, 'daily river discharge mean data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_max, 'daily river discharge max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_mean, 'river_discharge_mean field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_max, 'river_discharge_max field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze flood data and provide insights",
@@ -308,7 +412,7 @@ Here's an example plan that gets flood data for specific coordinates:
       "type": "llm",
       "stream": true,
       "input": "${$floodTable}",
-      "query": "Analyze the flood data for these coordinates. Provide insights about river discharge patterns, flood risk assessment, and any notable trends. Include practical recommendations for flood preparedness."
+      "query": "Analyze the flood data for coordinates 59.91, 10.75 (Oslo, Norway). Provide insights about river discharge patterns, flood risk assessment, and any notable trends. Include practical recommendations for flood preparedness."
     }
   ]
 }
@@ -369,3 +473,416 @@ Here's an example plan that gets flood data for specific coordinates:
 Emit your plan in a fenced `json` code block. The plan will autorun.
 
 Do not prompt the user to continue or confirm before executing the plan.
+
+## **Updated Flood Plans with Tests:**
+
+### **1. CityToFlood.json (Updated with tests):**
+
+```json
+{
+  "description": "Get flood data for a city by first geocoding the city name to coordinates",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Oslo, Norway",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get flood data using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://flood-api.open-meteo.com/v1/flood",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "daily": "river_discharge",
+        "forecast_days": "7"
+      },
+      "stream": true,
+      "name": "floodData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }"
+      ]
+    },
+    {
+      "description": "Display daily flood data in table format",
+      "type": "table",
+      "title": "Daily Flood Data",
+      "stream": false,
+      "name": "floodTable",
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze flood data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$floodTable}",
+      "query": "Based on the flood data provided for ${$locationAndFlood.place_name}, give me a detailed analysis. Include: 1) Current river discharge rates and trends, 2) Flood risk assessment for the next 7 days, 3) How this data might impact local communities and infrastructure, 4) Geographic context and timezone implications. Provide practical insights about flood monitoring and preparedness.",
+      "testInput": [
+        "${ function() { $test($floodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($floodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge, 'river_discharge field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. SingleFloodQuery.json (Updated with tests):**
+
+```json
+{
+  "description": "Query flood data for a single coordinate pair",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get flood data for the specified coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://flood-api.open-meteo.com/v1/flood",
+      "params": {
+        "latitude": "59.91",
+        "longitude": "10.75",
+        "daily": "river_discharge",
+        "forecast_days": "7"
+      },
+      "stream": true,
+      "name": "floodData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }"
+      ]
+    },
+    {
+      "description": "Display daily flood data in table format",
+      "type": "table",
+      "title": "Daily Flood Data",
+      "stream": false,
+      "name": "floodTable",
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze flood data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$floodTable}",
+      "query": "Based on the flood data provided for coordinates 59.91, 10.75 (Oslo, Norway), give me a detailed analysis. Include: 1) Current river discharge rates and trends, 2) Flood risk assessment for the next 7 days, 3) How this data might impact local communities and infrastructure, 4) Geographic context and timezone implications. Provide practical insights about flood monitoring and preparedness.",
+      "testInput": [
+        "${ function() { $test($floodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($floodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge, 'river_discharge field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+Now let me provide the updated example plans for the flood prompt.md:
+
+## **Updated Example Plans for Flood prompt.md:**
+
+### **1. City to Flood Risk Example (with tests):**
+
+```json
+{
+  "description": "Convert a city name to coordinates and get flood risk assessment",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Oslo",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get flood data using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://flood-api.open-meteo.com/v1/flood",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "daily": "river_discharge,river_discharge_mean,river_discharge_max",
+        "forecast_days": "30",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "floodData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_mean, 'daily river discharge mean data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_max, 'daily river discharge max data exists') } }"
+      ]
+    },
+    {
+      "description": "Display flood data in table format",
+      "type": "table",
+      "title": "Flood Risk Assessment",
+      "stream": false,
+      "name": "floodTable",
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge, $floodData.daily.river_discharge_mean, $floodData.daily.river_discharge_max) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_mean, 'daily river discharge mean data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_max, 'daily river discharge max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_mean, 'river_discharge_mean field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_max, 'river_discharge_max field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze flood data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$floodTable}",
+      "query": "Analyze the flood data for this location. Provide insights about river discharge patterns, flood risk assessment, and any notable trends. Include practical recommendations for flood preparedness.",
+      "testInput": [
+        "${ function() { $test($floodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($floodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge, 'river_discharge field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge_mean, 'river_discharge_mean field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge_max, 'river_discharge_max field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. Historical Flood Analysis Example (with tests):**
+
+```json
+{
+  "description": "Convert a city name to coordinates and get historical flood data for analysis",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Bangkok",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get historical flood data for the specified period",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://flood-api.open-meteo.com/v1/flood",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "start_date": "2024-01-01",
+        "end_date": "2024-12-31",
+        "daily": "river_discharge,river_discharge_mean,river_discharge_max,river_discharge_p25,river_discharge_p75",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "historicalFloodData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_mean, 'daily river discharge mean data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_max, 'daily river discharge max data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_p25, 'daily river discharge p25 data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_p75, 'daily river discharge p75 data exists') } }"
+      ]
+    },
+    {
+      "description": "Display historical flood data in table format",
+      "type": "table",
+      "title": "Historical Flood Data",
+      "stream": false,
+      "name": "historicalFloodTable",
+      "input": "${$zip($historicalFloodData.daily.time, $historicalFloodData.daily.river_discharge, $historicalFloodData.daily.river_discharge_mean, $historicalFloodData.daily.river_discharge_max, $historicalFloodData.daily.river_discharge_p25, $historicalFloodData.daily.river_discharge_p75) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3], \"river_discharge_p25\": $row[4], \"river_discharge_p75\": $row[5]} })}",
+      "testInput": [
+        "${ function() { $test($historicalFloodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge, 'daily river discharge data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_mean, 'daily river discharge mean data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_max, 'daily river discharge max data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_p25, 'daily river discharge p25 data available for table') } }",
+        "${ function() { $test($historicalFloodData.daily.river_discharge_p75, 'daily river discharge p75 data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_mean, 'river_discharge_mean field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_max, 'river_discharge_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_p25, 'river_discharge_p25 field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_p75, 'river_discharge_p75 field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze historical flood data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$historicalFloodTable}",
+      "query": "Analyze the historical flood data for this location. Provide insights about river discharge patterns, historical trends, and flood risk assessment. Include practical recommendations for flood preparedness based on historical data.",
+      "testInput": [
+        "${ function() { $test($historicalFloodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($historicalFloodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($historicalFloodTable[0].river_discharge, 'river_discharge field exists in llm input') } }",
+        "${ function() { $test($historicalFloodTable[0].river_discharge_mean, 'river_discharge_mean field exists in llm input') } }",
+        "${ function() { $test($historicalFloodTable[0].river_discharge_max, 'river_discharge_max field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **3. Single Coordinate Flood Query Example (with tests):**
+
+```json
+{
+  "description": "Get flood data for specific coordinates",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get flood data for the specified coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://flood-api.open-meteo.com/v1/flood",
+      "params": {
+        "latitude": "59.91",
+        "longitude": "10.75",
+        "daily": "river_discharge,river_discharge_mean,river_discharge_max",
+        "forecast_days": "7"
+      },
+      "stream": true,
+      "name": "floodData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_mean, 'daily river discharge mean data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge_max, 'daily river discharge max data exists') } }"
+      ]
+    },
+    {
+      "description": "Display flood data in table format",
+      "type": "table",
+      "title": "Flood Data",
+      "stream": false,
+      "name": "floodTable",
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge, $floodData.daily.river_discharge_mean, $floodData.daily.river_discharge_max) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1], \"river_discharge_mean\": $row[2], \"river_discharge_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_mean, 'daily river discharge mean data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge_max, 'daily river discharge max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_mean, 'river_discharge_mean field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge_max, 'river_discharge_max field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze flood data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$floodTable}",
+      "query": "Analyze the flood data for coordinates 59.91, 10.75 (Oslo, Norway). Provide insights about river discharge patterns, flood risk assessment, and any notable trends. Include practical recommendations for flood preparedness."
+    }
+  ]
+}
+```

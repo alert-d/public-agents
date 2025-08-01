@@ -1,37 +1,56 @@
 {
-    "description": "Query flood data for a single coordinate pair",
-    "type": "plan",
-    "version": "v0.0.1",
-    "serial": [
-        {
-            "description": "Get flood data for the specified coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://flood-api.open-meteo.com/v1/flood",
-            "params": {
-                "latitude": "59.91",
-                "longitude": "10.75",
-                "daily": "river_discharge",
-                "forecast_days": "7"
-            },
-            "stream": true,
-            "name": "floodData"
-        },
-        {
-            "description": "Display daily flood data in table format",
-            "type": "table",
-            "title": "Daily Flood Data",
-            "stream": false,
-            "name": "floodTable",
-            "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1]} })}"
-        },
-        {
-            "description": "Analyze flood data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$floodTable}",
-            "query": "Based on the flood data provided for coordinates 59.91, 10.75 (Oslo, Norway), give me a detailed analysis. Include: 1) Current river discharge rates and trends, 2) Flood risk assessment for the next 7 days, 3) How this data might impact local communities and infrastructure, 4) Geographic context and timezone implications. Provide practical insights about flood monitoring and preparedness."
-        }
-    ]
+  "description": "Query flood data for a single coordinate pair",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Get flood data for the specified coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://flood-api.open-meteo.com/v1/flood",
+      "params": {
+        "latitude": "59.91",
+        "longitude": "10.75",
+        "daily": "river_discharge",
+        "forecast_days": "7"
+      },
+      "stream": true,
+      "name": "floodData",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily flood data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.river_discharge, 'daily river discharge data exists') } }"
+      ]
+    },
+    {
+      "description": "Display daily flood data in table format",
+      "type": "table",
+      "title": "Daily Flood Data",
+      "stream": false,
+      "name": "floodTable",
+      "input": "${$zip($floodData.daily.time, $floodData.daily.river_discharge) ~> $map(function($row) { {\"date\": $row[0], \"river_discharge\": $row[1]} })}",
+      "testInput": [
+        "${ function() { $test($floodData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($floodData.daily.river_discharge, 'daily river discharge data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].river_discharge, 'river_discharge field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze flood data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$floodTable}",
+      "query": "Based on the flood data provided for coordinates 59.91, 10.75 (Oslo, Norway), give me a detailed analysis. Include: 1) Current river discharge rates and trends, 2) Flood risk assessment for the next 7 days, 3) How this data might impact local communities and infrastructure, 4) Geographic context and timezone implications. Provide practical insights about flood monitoring and preparedness.",
+      "testInput": [
+        "${ function() { $test($floodTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($floodTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($floodTable[0].river_discharge, 'river_discharge field exists in llm input') } }"
+      ]
+    }
+  ]
 }

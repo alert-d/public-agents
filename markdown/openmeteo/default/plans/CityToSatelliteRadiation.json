@@ -1,54 +1,107 @@
 {
-    "description": "Convert a city name to coordinates and get current satellite radiation data including global, direct, and diffuse solar radiation.",
-    "type": "plan",
-    "version": "v0.0.1",
-    "agent": "openmeteo/satelliteradiation",
-    "serial": [
-        {
-            "description": "Geocode the city name to get coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://geocoding-api.open-meteo.com/v1/search",
-            "params": {
-                "name": "Madrid",
-                "count": "1",
-                "language": "en",
-                "format": "json"
-            },
-            "stream": true,
-            "name": "geocodingResults"
-        },
-        {
-            "description": "Get satellite radiation data using the coordinates",
-            "type": "fetch",
-            "method": "GET",
-            "url": "https://satellite-api.open-meteo.com/v1/archive",
-            "params": {
-                "latitude": "${$geocodingResults.results[0].latitude}",
-                "longitude": "${$geocodingResults.results[0].longitude}",
-                "hourly": "shortwave_radiation,direct_radiation,diffuse_radiation,direct_normal_irradiance,terrestrial_radiation",
-                "daily": "sunrise,sunset,daylight_duration,sunshine_duration,shortwave_radiation_sum",
-                "timezone": "${$geocodingResults.results[0].timezone}",
-                "models": "satellite_radiation_seamless"
-            },
-            "stream": true,
-            "name": "radiationData"
-        },
-        {
-            "description": "Display hourly satellite radiation data in table format",
-            "type": "table",
-            "title": "Hourly Satellite Radiation",
-            "stream": false,
-            "name": "radiationTable",
-            "input": "${$zip($radiationData.hourly.time, $radiationData.hourly.shortwave_radiation, $radiationData.hourly.direct_radiation, $radiationData.hourly.diffuse_radiation, $radiationData.hourly.direct_normal_irradiance, $radiationData.hourly.terrestrial_radiation) ~> $map(function($row) { {\"time\": $row[0], \"shortwave_radiation\": $row[1], \"direct_radiation\": $row[2], \"diffuse_radiation\": $row[3], \"direct_normal_irradiance\": $row[4], \"terrestrial_radiation\": $row[5]} })}"
-        },
-        {
-            "description": "Analyze satellite radiation data and provide insights",
-            "model": "gpt-4",
-            "type": "llm",
-            "stream": true,
-            "input": "${$radiationTable}",
-            "query": "Analyze the satellite radiation data for this location. Provide insights about current solar radiation conditions, solar energy potential, and recommendations for solar applications. Include interpretation of global, direct, and diffuse radiation components."
-        }
-    ]
+  "description": "Convert a city name to coordinates and get current satellite radiation data including global, direct, and diffuse solar radiation.",
+  "type": "plan",
+  "version": "v0.0.1",
+  "agent": "openmeteo/satelliteradiation",
+  "serial": [
+    {
+      "description": "Geocode the city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Madrid",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get satellite radiation data using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://satellite-api.open-meteo.com/v1/archive",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "hourly": "shortwave_radiation,direct_radiation,diffuse_radiation,direct_normal_irradiance,terrestrial_radiation",
+        "daily": "sunrise,sunset,daylight_duration,sunshine_duration,shortwave_radiation_sum",
+        "timezone": "${$geocodingResults.results[0].timezone}",
+        "models": "satellite_radiation_seamless"
+      },
+      "stream": true,
+      "name": "radiationData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.hourly, 'hourly radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.time, 'hourly time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.shortwave_radiation, 'hourly shortwave radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.direct_radiation, 'hourly direct radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.diffuse_radiation, 'hourly diffuse radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.direct_normal_irradiance, 'hourly direct normal irradiance data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.terrestrial_radiation, 'hourly terrestrial radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily radiation data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunrise, 'daily sunrise data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunset, 'daily sunset data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.daylight_duration, 'daily daylight duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.sunshine_duration, 'daily sunshine duration data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.shortwave_radiation_sum, 'daily shortwave radiation sum data exists') } }"
+      ]
+    },
+    {
+      "description": "Display hourly satellite radiation data in table format",
+      "type": "table",
+      "title": "Hourly Satellite Radiation",
+      "stream": false,
+      "name": "radiationTable",
+      "input": "${$zip($radiationData.hourly.time, $radiationData.hourly.shortwave_radiation, $radiationData.hourly.direct_radiation, $radiationData.hourly.diffuse_radiation, $radiationData.hourly.direct_normal_irradiance, $radiationData.hourly.terrestrial_radiation) ~> $map(function($row) { {\"time\": $row[0], \"shortwave_radiation\": $row[1], \"direct_radiation\": $row[2], \"diffuse_radiation\": $row[3], \"direct_normal_irradiance\": $row[4], \"terrestrial_radiation\": $row[5]} })}",
+      "testInput": [
+        "${ function() { $test($radiationData.hourly.time, 'hourly time data available for table') } }",
+        "${ function() { $test($radiationData.hourly.shortwave_radiation, 'hourly shortwave radiation data available for table') } }",
+        "${ function() { $test($radiationData.hourly.direct_radiation, 'hourly direct radiation data available for table') } }",
+        "${ function() { $test($radiationData.hourly.diffuse_radiation, 'hourly diffuse radiation data available for table') } }",
+        "${ function() { $test($radiationData.hourly.direct_normal_irradiance, 'hourly direct normal irradiance data available for table') } }",
+        "${ function() { $test($radiationData.hourly.terrestrial_radiation, 'hourly terrestrial radiation data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].time, 'time field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].shortwave_radiation, 'shortwave_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].direct_radiation, 'direct_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].diffuse_radiation, 'diffuse_radiation field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].direct_normal_irradiance, 'direct_normal_irradiance field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].terrestrial_radiation, 'terrestrial_radiation field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze satellite radiation data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$radiationTable}",
+      "query": "Analyze the satellite radiation data for this location. Provide insights about current solar radiation conditions, solar energy potential, and recommendations for solar applications. Include interpretation of global, direct, and diffuse radiation components.",
+      "testInput": [
+        "${ function() { $test($radiationTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($radiationTable[0].time, 'time field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].shortwave_radiation, 'shortwave_radiation field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].direct_radiation, 'direct_radiation field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].diffuse_radiation, 'diffuse_radiation field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].direct_normal_irradiance, 'direct_normal_irradiance field exists in llm input') } }",
+        "${ function() { $test($radiationTable[0].terrestrial_radiation, 'terrestrial_radiation field exists in llm input') } }"
+      ]
+    }
+  ]
 }

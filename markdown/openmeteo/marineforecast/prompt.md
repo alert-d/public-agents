@@ -188,7 +188,14 @@ Here's an example plan that gets marine weather data for a coastal location:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get marine weather forecast using the coordinates",
@@ -206,7 +213,26 @@ Here's an example plan that gets marine weather data for a coastal location:
         "cell_selection": "sea"
       },
       "stream": true,
-      "name": "marineData"
+      "name": "marineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.current, 'current marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_height, 'current wave height data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_direction, 'current wave direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_period, 'current wave period data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.sea_surface_temperature, 'current sea surface temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_velocity, 'current ocean current velocity data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_direction, 'current ocean current direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_height_max, 'daily wave height max data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_direction_dominant, 'daily wave direction dominant data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_period_max, 'daily wave period max data exists') } }"
+      ]
     },
     {
       "description": "Display 7-day marine forecast in table format",
@@ -214,7 +240,20 @@ Here's an example plan that gets marine weather data for a coastal location:
       "title": "7-Day Marine Forecast",
       "stream": false,
       "name": "marineTable",
-      "input": "${$zip($marineData.daily.time, $marineData.daily.wave_height_max, $marineData.daily.wave_direction_dominant, $marineData.daily.wave_period_max) ~> $map(function($row) { {\"date\": $row[0], \"wave_height_max\": $row[1], \"wave_direction_dominant\": $row[2], \"wave_period_max\": $row[3]} })}"
+      "input": "${$zip($marineData.daily.time, $marineData.daily.wave_height_max, $marineData.daily.wave_direction_dominant, $marineData.daily.wave_period_max) ~> $map(function($row) { {\"date\": $row[0], \"wave_height_max\": $row[1], \"wave_direction_dominant\": $row[2], \"wave_period_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($marineData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_height_max, 'daily wave height max data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_direction_dominant, 'daily wave direction dominant data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_period_max, 'daily wave period max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height_max, 'wave_height_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction_dominant, 'wave_direction_dominant field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period_max, 'wave_period_max field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze marine weather data and provide insights",
@@ -222,7 +261,14 @@ Here's an example plan that gets marine weather data for a coastal location:
       "type": "llm",
       "stream": true,
       "input": "${$marineTable}",
-      "query": "Analyze the marine weather forecast data for this coastal location. Provide insights about wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what to expect in the coming days."
+      "query": "Analyze the marine weather forecast data for this coastal location. Provide insights about wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what to expect in the coming days.",
+      "testInput": [
+        "${ function() { $test($marineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($marineTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_height_max, 'wave_height_max field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_direction_dominant, 'wave_direction_dominant field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_period_max, 'wave_period_max field exists in llm input') } }"
+      ]
     }
   ]
 }
@@ -250,7 +296,14 @@ Here's an example plan that gets historical marine data for analysis:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get historical marine data for the specified period",
@@ -267,15 +320,46 @@ Here's an example plan that gets historical marine data for analysis:
         "cell_selection": "sea"
       },
       "stream": true,
-      "name": "historicalMarineData"
+      "name": "historicalMarineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.hourly, 'hourly historical marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.time, 'hourly time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.wave_height, 'hourly wave height data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.wave_direction, 'hourly wave direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.wave_period, 'hourly wave period data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.sea_surface_temperature, 'hourly sea surface temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.ocean_current_velocity, 'hourly ocean current velocity data exists') } }"
+      ]
     },
     {
-      "description": "Display hourly historical marine data in table format",
+      "description": "Display historical marine data in table format",
       "type": "table",
-      "title": "Hourly Historical Marine Data",
+      "title": "Historical Marine Data",
       "stream": false,
       "name": "historicalMarineTable",
-      "input": "${$zip($historicalMarineData.hourly.time, $historicalMarineData.hourly.wave_height, $historicalMarineData.hourly.wave_direction, $historicalMarineData.hourly.wave_period, $historicalMarineData.hourly.sea_surface_temperature, $historicalMarineData.hourly.ocean_current_velocity) ~> $map(function($row) { {\"date\": $row[0], \"wave_height\": $row[1], \"wave_direction\": $row[2], \"wave_period\": $row[3], \"sea_surface_temperature\": $row[4], \"ocean_current_velocity\": $row[5]} })}"
+      "input": "${$zip($historicalMarineData.hourly.time, $historicalMarineData.hourly.wave_height, $historicalMarineData.hourly.wave_direction, $historicalMarineData.hourly.wave_period, $historicalMarineData.hourly.sea_surface_temperature, $historicalMarineData.hourly.ocean_current_velocity) ~> $map(function($row) { {\"date\": $row[0], \"wave_height\": $row[1], \"wave_direction\": $row[2], \"wave_period\": $row[3], \"sea_surface_temperature\": $row[4], \"ocean_current_velocity\": $row[5]} })}",
+      "testInput": [
+        "${ function() { $test($historicalMarineData.hourly.time, 'hourly time data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.wave_height, 'hourly wave height data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.wave_direction, 'hourly wave direction data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.wave_period, 'hourly wave period data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.sea_surface_temperature, 'hourly sea surface temperature data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.ocean_current_velocity, 'hourly ocean current velocity data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height, 'wave_height field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction, 'wave_direction field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period, 'wave_period field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].sea_surface_temperature, 'sea_surface_temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].ocean_current_velocity, 'ocean_current_velocity field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze historical marine data and provide insights",
@@ -283,19 +367,448 @@ Here's an example plan that gets historical marine data for analysis:
       "type": "llm",
       "stream": true,
       "input": "${$historicalMarineTable}",
-      "query": "Analyze the historical marine data for this coastal location. The data contains hourly wave height, direction, period, sea surface temperature, and ocean current velocity. Provide insights about: 1) Wave patterns and trends, 2) Sea surface temperature variations, 3) Ocean current characteristics, 4) Seasonal marine conditions. Include specific data points, averages, and practical observations about marine patterns."
+      "query": "Analyze the historical marine data for this coastal location. Provide insights about wave patterns, sea surface temperature trends, and ocean current variations. Include practical observations for marine activities and safety based on the historical patterns.",
+      "testInput": [
+        "${ function() { $test($historicalMarineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($historicalMarineTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].wave_height, 'wave_height field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].wave_direction, 'wave_direction field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].wave_period, 'wave_period field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].sea_surface_temperature, 'sea_surface_temperature field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].ocean_current_velocity, 'ocean_current_velocity field exists in llm input') } }"
+      ]
     }
   ]
 }
 ```
 
-## Example Plan: Current Marine Conditions
+## **Updated MarineForecast Plans with Tests:**
 
-Here's an example plan that gets current marine conditions for a location:
+### **1. CityToMarineForecast.json (Updated with tests):**
 
 ```json
 {
-  "description": "Get current marine conditions for a coastal location",
+  "description": "Convert a coastal city name to coordinates and get a 7-day marine weather forecast with wave data, sea surface temperature, and ocean currents.",
+  "type": "plan",
+  "version": "v0.0.1",
+  "agent": "openmeteo/marineforecast",
+  "serial": [
+    {
+      "description": "Geocode the coastal city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Miami",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get marine weather forecast using the coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://marine-api.open-meteo.com/v1/marine",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,ocean_current_direction",
+        "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,swell_wave_height,sea_surface_temperature,ocean_current_velocity",
+        "daily": "wave_height_max,wave_direction_dominant,wave_period_max",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "marineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.current, 'current marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_height, 'current wave height data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_direction, 'current wave direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_period, 'current wave period data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.sea_surface_temperature, 'current sea surface temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_velocity, 'current ocean current velocity data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_direction, 'current ocean current direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_height_max, 'daily wave height max data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_direction_dominant, 'daily wave direction dominant data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_period_max, 'daily wave period max data exists') } }"
+      ]
+    },
+    {
+      "description": "Display 7-day marine forecast in table format",
+      "type": "table",
+      "title": "7-Day Marine Forecast",
+      "stream": false,
+      "name": "marineTable",
+      "input": "${$zip($marineData.daily.wave_height_max, $marineData.daily.wave_direction_dominant, $marineData.daily.wave_period_max, $marineData.daily.time) ~> $map(function($row) { {\"date\": $row[3], \"wave_height_max\": $row[0], \"wave_direction_dominant\": $row[1], \"wave_period_max\": $row[2]} })}",
+      "testInput": [
+        "${ function() { $test($marineData.daily.wave_height_max, 'daily wave height max data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_direction_dominant, 'daily wave direction dominant data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_period_max, 'daily wave period max data available for table') } }",
+        "${ function() { $test($marineData.daily.time, 'daily time data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height_max, 'wave_height_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction_dominant, 'wave_direction_dominant field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period_max, 'wave_period_max field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze marine weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$marineTable}",
+      "query": "Analyze the marine weather forecast data for this coastal location. Provide insights about current wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what to expect in the coming days.",
+      "testInput": [
+        "${ function() { $test($marineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($marineTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_height_max, 'wave_height_max field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_direction_dominant, 'wave_direction_dominant field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_period_max, 'wave_period_max field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. HistoricalMarineData.json (Updated with tests):**
+
+```json
+{
+  "description": "Convert a coastal city name to coordinates and get historical marine weather data for analysis of wave patterns, sea surface temperature trends, and ocean current variations.",
+  "type": "plan",
+  "version": "v0.0.1",
+  "agent": "openmeteo/marineforecast",
+  "serial": [
+    {
+      "description": "Geocode the coastal city name to get coordinates",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "San Diego",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get historical marine weather data for the specified period",
+      "type": "fetch",
+      "method": "GET",
+      "url": "https://archive-api.open-meteo.com/v1/archive",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "start_date": "2023-01-01",
+        "end_date": "2023-12-31",
+        "daily": "wave_height_max,wave_direction_dominant,wave_period_max",
+        "timezone": "${$geocodingResults.results[0].timezone}"
+      },
+      "stream": true,
+      "name": "historicalMarineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily historical marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_height_max, 'daily wave height max data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_direction_dominant, 'daily wave direction dominant data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_period_max, 'daily wave period max data exists') } }"
+      ]
+    },
+    {
+      "description": "Display daily marine data in table format",
+      "type": "table",
+      "title": "Daily Marine Data",
+      "stream": false,
+      "name": "marineTable",
+      "input": "${$zip($historicalMarineData.daily.time, $historicalMarineData.daily.wave_height_max, $historicalMarineData.daily.wave_direction_dominant, $historicalMarineData.daily.wave_period_max) ~> $map(function($row) { {\"date\": $row[0], \"wave_height_max\": $row[1], \"wave_direction_dominant\": $row[2], \"wave_period_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($historicalMarineData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($historicalMarineData.daily.wave_height_max, 'daily wave height max data available for table') } }",
+        "${ function() { $test($historicalMarineData.daily.wave_direction_dominant, 'daily wave direction dominant data available for table') } }",
+        "${ function() { $test($historicalMarineData.daily.wave_period_max, 'daily wave period max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height_max, 'wave_height_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction_dominant, 'wave_direction_dominant field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period_max, 'wave_period_max field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze historical marine weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$marineTable}",
+      "query": "Analyze the historical marine weather data for ${$transformHistoricalMarine.location}. The data contains daily wave height maximums, dominant wave directions, and wave period maximums. Provide insights about: 1) Wave pattern trends and seasonal variations, 2) Notable wave events and extremes, 3) Wave direction patterns and their implications, 4) Practical observations for marine activities and safety. Include specific data points, averages, and recommendations based on the historical patterns.",
+      "testInput": [
+        "${ function() { $test($marineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($marineTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_height_max, 'wave_height_max field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_direction_dominant, 'wave_direction_dominant field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_period_max, 'wave_period_max field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+Now let me provide the updated example plans for the marineforecast prompt.md:
+
+## **Updated Example Plans for MarineForecast prompt.md:**
+
+### **1. Coastal Marine Forecast Example (with tests):**
+
+```json
+{
+  "description": "Convert a coastal city name to coordinates and get marine weather forecast",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the coastal city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "Miami",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get marine weather forecast using the coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://marine-api.open-meteo.com/v1/marine",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "current": "wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,ocean_current_direction",
+        "hourly": "wave_height,wave_direction,wave_period,wind_wave_height,swell_wave_height,sea_surface_temperature,ocean_current_velocity",
+        "daily": "wave_height_max,wave_direction_dominant,wave_period_max",
+        "forecast_days": "7",
+        "timezone": "${$geocodingResults.results[0].timezone}",
+        "cell_selection": "sea"
+      },
+      "stream": true,
+      "name": "marineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.current, 'current marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_height, 'current wave height data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_direction, 'current wave direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_period, 'current wave period data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.sea_surface_temperature, 'current sea surface temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_velocity, 'current ocean current velocity data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_direction, 'current ocean current direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily, 'daily marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.time, 'daily time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_height_max, 'daily wave height max data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_direction_dominant, 'daily wave direction dominant data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.daily.wave_period_max, 'daily wave period max data exists') } }"
+      ]
+    },
+    {
+      "description": "Display 7-day marine forecast in table format",
+      "type": "table",
+      "title": "7-Day Marine Forecast",
+      "stream": false,
+      "name": "marineTable",
+      "input": "${$zip($marineData.daily.time, $marineData.daily.wave_height_max, $marineData.daily.wave_direction_dominant, $marineData.daily.wave_period_max) ~> $map(function($row) { {\"date\": $row[0], \"wave_height_max\": $row[1], \"wave_direction_dominant\": $row[2], \"wave_period_max\": $row[3]} })}",
+      "testInput": [
+        "${ function() { $test($marineData.daily.time, 'daily time data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_height_max, 'daily wave height max data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_direction_dominant, 'daily wave direction dominant data available for table') } }",
+        "${ function() { $test($marineData.daily.wave_period_max, 'daily wave period max data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height_max, 'wave_height_max field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction_dominant, 'wave_direction_dominant field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period_max, 'wave_period_max field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze marine weather data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$marineTable}",
+      "query": "Analyze the marine weather forecast data for this coastal location. Provide insights about wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what to expect in the coming days.",
+      "testInput": [
+        "${ function() { $test($marineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($marineTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_height_max, 'wave_height_max field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_direction_dominant, 'wave_direction_dominant field exists in llm input') } }",
+        "${ function() { $test($marineTable[0].wave_period_max, 'wave_period_max field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **2. Historical Marine Data Example (with tests):**
+
+```json
+{
+  "description": "Convert a coastal city name to coordinates and get historical marine data for analysis",
+  "type": "plan",
+  "version": "v0.0.1",
+  "serial": [
+    {
+      "description": "Geocode the coastal city name to get coordinates",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://geocoding-api.open-meteo.com/v1/search",
+      "params": {
+        "name": "San Diego",
+        "count": "1",
+        "language": "en",
+        "format": "json"
+      },
+      "stream": true,
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
+    },
+    {
+      "description": "Get historical marine data for the specified period",
+      "type": "restful",
+      "method": "GET",
+      "url": "https://marine-api.open-meteo.com/v1/marine",
+      "params": {
+        "latitude": "${$geocodingResults.results[0].latitude}",
+        "longitude": "${$geocodingResults.results[0].longitude}",
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-31",
+        "hourly": "wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity",
+        "timezone": "${$geocodingResults.results[0].timezone}",
+        "cell_selection": "sea"
+      },
+      "stream": true,
+      "name": "historicalMarineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.hourly, 'hourly historical marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.time, 'hourly time data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.wave_height, 'hourly wave height data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.wave_direction, 'hourly wave direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.wave_period, 'hourly wave period data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.sea_surface_temperature, 'hourly sea surface temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.hourly.ocean_current_velocity, 'hourly ocean current velocity data exists') } }"
+      ]
+    },
+    {
+      "description": "Display historical marine data in table format",
+      "type": "table",
+      "title": "Historical Marine Data",
+      "stream": false,
+      "name": "historicalMarineTable",
+      "input": "${$zip($historicalMarineData.hourly.time, $historicalMarineData.hourly.wave_height, $historicalMarineData.hourly.wave_direction, $historicalMarineData.hourly.wave_period, $historicalMarineData.hourly.sea_surface_temperature, $historicalMarineData.hourly.ocean_current_velocity) ~> $map(function($row) { {\"date\": $row[0], \"wave_height\": $row[1], \"wave_direction\": $row[2], \"wave_period\": $row[3], \"sea_surface_temperature\": $row[4], \"ocean_current_velocity\": $row[5]} })}",
+      "testInput": [
+        "${ function() { $test($historicalMarineData.hourly.time, 'hourly time data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.wave_height, 'hourly wave height data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.wave_direction, 'hourly wave direction data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.wave_period, 'hourly wave period data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.sea_surface_temperature, 'hourly sea surface temperature data available for table') } }",
+        "${ function() { $test($historicalMarineData.hourly.ocean_current_velocity, 'hourly ocean current velocity data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].date, 'date field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height, 'wave_height field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction, 'wave_direction field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period, 'wave_period field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].sea_surface_temperature, 'sea_surface_temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].ocean_current_velocity, 'ocean_current_velocity field exists in table output') } }"
+      ]
+    },
+    {
+      "description": "Analyze historical marine data and provide insights",
+      "model": "gpt-4",
+      "type": "llm",
+      "stream": true,
+      "input": "${$historicalMarineTable}",
+      "query": "Analyze the historical marine data for this coastal location. Provide insights about wave patterns, sea surface temperature trends, and ocean current variations. Include practical observations for marine activities and safety based on the historical patterns.",
+      "testInput": [
+        "${ function() { $test($historicalMarineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($historicalMarineTable[0].date, 'date field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].wave_height, 'wave_height field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].wave_direction, 'wave_direction field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].wave_period, 'wave_period field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].sea_surface_temperature, 'sea_surface_temperature field exists in llm input') } }",
+        "${ function() { $test($historicalMarineTable[0].ocean_current_velocity, 'ocean_current_velocity field exists in llm input') } }"
+      ]
+    }
+  ]
+}
+```
+
+### **3. Current Marine Conditions Example (with tests):**
+
+```json
+{
+  "description": "Get current marine conditions for a specific location",
   "type": "plan",
   "version": "v0.0.1",
   "serial": [
@@ -311,7 +824,14 @@ Here's an example plan that gets current marine conditions for a location:
         "format": "json"
       },
       "stream": true,
-      "name": "geocodingResults"
+      "name": "geocodingResults",
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.results, 'geocoding results exist') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].latitude, 'latitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].longitude, 'longitude exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].name, 'location name exists in geocoding results') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.results[0].timezone, 'timezone exists in geocoding results') } }"
+      ]
     },
     {
       "description": "Get current marine conditions using the coordinates",
@@ -326,7 +846,21 @@ Here's an example plan that gets current marine conditions for a location:
         "cell_selection": "sea"
       },
       "stream": true,
-      "name": "currentMarineData"
+      "name": "currentMarineData",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].latitude, 'latitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].longitude, 'longitude from geocoding available') } }",
+        "${ function() { $test($geocodingResults.results[0].timezone, 'timezone from geocoding available') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($OUTPUT.current, 'current marine data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_height, 'current wave height data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_direction, 'current wave direction data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.wave_period, 'current wave period data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.sea_surface_temperature, 'current sea surface temperature data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_velocity, 'current ocean current velocity data exists') } }",
+        "${ function($OUTPUT) { $test($OUTPUT.current.ocean_current_direction, 'current ocean current direction data exists') } }"
+      ]
     },
     {
       "description": "Display current marine conditions in table format",
@@ -334,7 +868,26 @@ Here's an example plan that gets current marine conditions for a location:
       "title": "Current Marine Conditions",
       "stream": false,
       "name": "currentMarineTable",
-      "input": "${[{\"location\": $geocodingResults.results[0].name, \"latitude\": $currentMarineData.latitude, \"longitude\": $currentMarineData.longitude, \"current_wave_height\": $currentMarineData.current.wave_height, \"current_wave_direction\": $currentMarineData.current.wave_direction, \"current_wave_period\": $currentMarineData.current.wave_period, \"current_sea_surface_temperature\": $currentMarineData.current.sea_surface_temperature, \"current_ocean_current_velocity\": $currentMarineData.current.ocean_current_velocity, \"current_ocean_current_direction\": $currentMarineData.current.ocean_current_direction, \"timezone\": $currentMarineData.timezone}]}"
+      "input": "${[{\"location\": $geocodingResults.results[0].name, \"wave_height\": $currentMarineData.current.wave_height, \"wave_direction\": $currentMarineData.current.wave_direction, \"wave_period\": $currentMarineData.current.wave_period, \"sea_surface_temperature\": $currentMarineData.current.sea_surface_temperature, \"ocean_current_velocity\": $currentMarineData.current.ocean_current_velocity, \"ocean_current_direction\": $currentMarineData.current.ocean_current_direction}]}",
+      "testInput": [
+        "${ function() { $test($geocodingResults.results[0].name, 'location name available for table') } }",
+        "${ function() { $test($currentMarineData.current.wave_height, 'current wave height data available for table') } }",
+        "${ function() { $test($currentMarineData.current.wave_direction, 'current wave direction data available for table') } }",
+        "${ function() { $test($currentMarineData.current.wave_period, 'current wave period data available for table') } }",
+        "${ function() { $test($currentMarineData.current.sea_surface_temperature, 'current sea surface temperature data available for table') } }",
+        "${ function() { $test($currentMarineData.current.ocean_current_velocity, 'current ocean current velocity data available for table') } }",
+        "${ function() { $test($currentMarineData.current.ocean_current_direction, 'current ocean current direction data available for table') } }"
+      ],
+      "testOutput": [
+        "${ function($OUTPUT) { $test($type($OUTPUT) = 'array', 'table output is array') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].location, 'location field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_height, 'wave_height field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_direction, 'wave_direction field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].wave_period, 'wave_period field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].sea_surface_temperature, 'sea_surface_temperature field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].ocean_current_velocity, 'ocean_current_velocity field exists in table output') } }",
+        "${ function($OUTPUT) { $test($OUTPUT[0].ocean_current_direction, 'ocean_current_direction field exists in table output') } }"
+      ]
     },
     {
       "description": "Analyze current marine conditions and provide insights",
@@ -342,72 +895,18 @@ Here's an example plan that gets current marine conditions for a location:
       "type": "llm",
       "stream": true,
       "input": "${$currentMarineTable}",
-      "query": "Analyze the current marine conditions for this coastal location. Provide insights about current wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities, safety considerations, and what these conditions mean for coastal activities."
+      "query": "Analyze the current marine conditions for this coastal location. Provide insights about wave conditions, sea surface temperature, and ocean currents. Include practical recommendations for marine activities and safety considerations.",
+      "testInput": [
+        "${ function() { $test($currentMarineTable~>$type() ='array', 'input to llm is an array') } }",
+        "${ function() { $test($currentMarineTable[0].location, 'location field exists in llm input') } }",
+        "${ function() { $test($currentMarineTable[0].wave_height, 'wave_height field exists in llm input') } }",
+        "${ function() { $test($currentMarineTable[0].wave_direction, 'wave_direction field exists in llm input') } }",
+        "${ function() { $test($currentMarineTable[0].wave_period, 'wave_period field exists in llm input') } }",
+        "${ function() { $test($currentMarineTable[0].sea_surface_temperature, 'sea_surface_temperature field exists in llm input') } }",
+        "${ function() { $test($currentMarineTable[0].ocean_current_velocity, 'ocean_current_velocity field exists in llm input') } }",
+        "${ function() { $test($currentMarineTable[0].ocean_current_direction, 'ocean_current_direction field exists in llm input') } }"
+      ]
     }
   ]
 }
 ```
-
----
-
-## Marine Weather Data Interpretation
-
-### Wave Height Categories
-
-- **Calm (0-0.5m)**: Very light waves, ideal for swimming
-- **Light (0.5-1.25m)**: Small waves, good for most water activities
-- **Moderate (1.25-2.5m)**: Medium waves, suitable for experienced boaters
-- **Rough (2.5-4m)**: Large waves, challenging conditions
-- **Very Rough (4m+)**: Dangerous conditions, avoid marine activities
-
-### Sea Surface Temperature Implications
-
-- **Cold (< 15°C)**: Cold water activities, thermal protection needed
-- **Cool (15-20°C)**: Moderate water temperature, some thermal protection
-- **Warm (20-25°C)**: Comfortable for most water activities
-- **Hot (> 25°C)**: Very warm water, potential for marine heat waves
-
-### Ocean Current Considerations
-
-- **Weak (< 0.5 m/s)**: Minimal impact on marine activities
-- **Moderate (0.5-1 m/s)**: Noticeable current, plan accordingly
-- **Strong (1-2 m/s)**: Significant current, experienced users only
-- **Very Strong (> 2 m/s)**: Dangerous current, avoid activities
-
-### Practical Applications
-
-- **Maritime Safety**: Navigation and vessel operations
-- **Recreational Activities**: Surfing, sailing, fishing
-- **Coastal Management**: Erosion monitoring and planning
-- **Environmental Monitoring**: Marine ecosystem health
-
----
-
-## Simplification Strategies
-
-- If the user specifies multiple locations, handle only the first and suggest they repeat the query for others.
-- If they request both current and forecast data, prefer `current` unless clearly specified otherwise.
-- If too many variables are listed, select the most relevant 2–3 based on the question.
-- If the query is vague, default to `current` for immediate conditions, or `hourly` for forecast data.
-- For complex requests, focus on the primary marine data type and suggest follow-up queries for additional data.
-
----
-
-## Constraints
-
-- Never include more than one Open-Meteo endpoint in a plan.
-- Never use transformations, filters, or JSONata expressions.
-- Never skip the LLM step.
-- Never dynamically generate dates—only static `YYYY-MM-DD` values are allowed.
-- Always use the correct base URL for each API endpoint.
-- **CRITICAL**: Coastal area accuracy is limited.
-- **CRITICAL**: Not suitable for coastal navigation.
-- **CRITICAL**: Use with caution in coastal areas.
-
----
-
-## Emit JSON
-
-Emit your plan in a fenced `json` code block. The plan will autorun.
-
-Do not prompt the user to continue or confirm before executing the plan.
