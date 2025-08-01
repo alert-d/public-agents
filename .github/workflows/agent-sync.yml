@@ -214,28 +214,9 @@ jobs:
           if ! git diff --staged --quiet; then
             git commit -m "Auto-sync agents from source repos"
             git push
-            
-            # Only trigger sync-docs if we actually committed changes
-            echo "Triggering sync-docs workflow..."
-            response=$(curl -s -w "\n%{http_code}" -X POST \
-              -H "Authorization: Bearer ${{ secrets.DOC_SYNC }}" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              https://api.github.com/repos/${{ github.repository }}/dispatches \
-              -d '{"event_type":"sync-docs","client_payload":{"repo_url":"git@github.com:${{ github.repository }}.git"}}')
-
-            http_code=$(echo "$response" | tail -n1)
-            response_body=$(echo "$response" | head -n -1)
-
-            if [ "$http_code" = "204" ]; then
-              echo "Dispatch event sent successfully to sync-docs"
-            else
-              echo "Failed to send dispatch event. Status: $http_code"
-              echo "Response: $response_body"
-              exit 1
-            fi
+            echo "Changes committed and pushed - sync-docs will be triggered by push event"
           else
-            echo "No changes to commit, skipping sync-docs trigger"
+            echo "No changes to commit"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.DOC_SYNC }}
