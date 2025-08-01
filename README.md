@@ -39,4 +39,6 @@ A comprehensive collection of weather and environmental data agents powered by t
 Each agent has detailed documentation and usage examples:
 
 - **[OpenMeteo Documentation](./markdown/openmeteo/docs/openmeteo.md)**: Complete API reference
-- **Agent-specific docs**: Available in each agent's directory under `markdown/openmeteo/`
+- ## **Agent-specific docs**: Available in each agent's directory under `markdown/openmeteo/`
+
+---
