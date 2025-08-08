@@ -134,8 +134,8 @@ jobs:
                     exit 1
                   fi
                   
-                  echo "✅ meta.yaml integrity validated - files match"
-                  echo "✅ Required fields validated - type: $imported_type, scm: $imported_scm"
+                  echo "meta.yaml integrity validated - files match"
+                  echo "Required fields validated - type: $imported_type, scm: $imported_scm"
                 else
                   echo "Warning: No meta.yaml found in imported agent directory"
                 fi
@@ -145,6 +145,60 @@ jobs:
             if [ "$sensitive_files" -gt 0 ]; then
               echo "Warning: Found $sensitive_files potential sensitive files in copied agent"
               # Don't fail, but log the warning
+            fi
+            
+            # Validate exchange-info.yaml file and required fields
+            echo "Validating exchange-info.yaml file..."
+            exchange_info_file="markdown/$agent_type/exchange-info.yaml"
+            if [ -f "$exchange_info_file" ]; then
+              echo "Found exchange-info.yaml, validating required fields..."
+              
+              # Check for required fields
+              title=$(yq eval '.title' "$exchange_info_file" 2>/dev/null | tr -d '"')
+              short_description=$(yq eval '.shortDescription' "$exchange_info_file" 2>/dev/null | tr -d '"')
+              agent_icon=$(yq eval '.agentIcon' "$exchange_info_file" 2>/dev/null | tr -d '"')
+              tile_image=$(yq eval '.tileImage' "$exchange_info_file" 2>/dev/null | tr -d '"')
+              
+              # Validate each required field
+              if [ -z "$title" ] || [ "$title" = "null" ]; then
+                echo "Error: Missing required field 'title' in exchange-info.yaml"
+                rm -rf "markdown/$agent_type"
+                rm -rf "$temp_dir"
+                exit 1
+              fi
+              
+              if [ -z "$short_description" ] || [ "$short_description" = "null" ]; then
+                echo "Error: Missing required field 'shortDescription' in exchange-info.yaml"
+                rm -rf "markdown/$agent_type"
+                rm -rf "$temp_dir"
+                exit 1
+              fi
+              
+              if [ -z "$agent_icon" ] || [ "$agent_icon" = "null" ]; then
+                echo "Error: Missing required field 'agentIcon' in exchange-info.yaml"
+                rm -rf "markdown/$agent_type"
+                rm -rf "$temp_dir"
+                exit 1
+              fi
+              
+              if [ -z "$tile_image" ] || [ "$tile_image" = "null" ]; then
+                echo "Error: Missing required field 'tileImage' in exchange-info.yaml"
+                rm -rf "markdown/$agent_type"
+                rm -rf "$temp_dir"
+                exit 1
+              fi
+              
+              echo "exchange-info.yaml validation passed"
+              echo "  - title: $title"
+              echo "  - shortDescription: $short_description"
+              echo "  - agentIcon: $agent_icon"
+              echo "  - tileImage: $tile_image"
+            else
+              echo "Error: Required file exchange-info.yaml not found in $agent_type"
+              echo "Please create exchange-info.yaml with required fields: title, shortDescription, agentIcon, tileImage"
+              rm -rf "markdown/$agent_type"
+              rm -rf "$temp_dir"
+              exit 1
             fi
             
             # Validate description.md files are under 128 characters
@@ -161,14 +215,14 @@ jobs:
                 echo "Description length: $char_count characters"
                 
                 if [ "$char_count" -gt 128 ]; then
-                  echo "❌ Error: $desc_file exceeds 128 character limit (has $char_count characters)"
+                  echo "Error: $desc_file exceeds 128 character limit (has $char_count characters)"
                   echo "Content: '$content'"
                   echo "Please shorten the description to 128 characters or less"
                   rm -rf "markdown/$agent_type"
                   rm -rf "$temp_dir"
                   exit 1
                 else
-                  echo "✅ $desc_file is within limit ($char_count/128 characters)"
+                  echo "$desc_file is within limit ($char_count/128 characters)"
                 fi
               done
             else
